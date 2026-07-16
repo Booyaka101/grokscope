@@ -17,7 +17,7 @@ MIT licensed. `npm i -g grokscope` → https://github.com/Booyaka101/grokscope
 
 **Post 2 (reply, with screenshot-trending.png):**
 
-`grokscope trending --topics "rust,typescript,go"` = a weekly state-of-the-ecosystem report in 20 seconds: sentiment, top concern, momentum per topic.
+`grokscope trending --topics "rust,typescript,go"` = a weekly state-of-the-ecosystem report in under a minute: sentiment, top concern, momentum per topic.
 
 --json for CI jobs, --md for newsletters. Your xAI key, your data — no middleman server.
 
@@ -27,7 +27,7 @@ Fun implementation details:
 • citations render as OSC 8 clickable hyperlinks
 • post dates are decoded straight out of X snowflake IDs → "(4d ago)"
 • `grokscope doctor` validates your setup against GET /v1/models for free
-• 31 e2e tests run against a doc-accurate offline mock — no key needed to contribute
+• 38 e2e tests run against a doc-accurate offline mock — no key needed to contribute
 
 Stars & PRs welcome: https://github.com/Booyaka101/grokscope
 

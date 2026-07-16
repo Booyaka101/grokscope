@@ -25,8 +25,11 @@ import {
 } from './prompts.js';
 import { renderResult, renderMarkdownDoc, renderJson } from './formatter.js';
 
-const VERSION = '1.0.0';
-const GET_KEY_MSG = 'Get your free key (includes $20 credit) at https://console.x.ai';
+const VERSION = '1.0.1';
+// A new xAI team starts with zero credits and 403s on every call, so getting a
+// key is only half the setup — say so here rather than letting the first call fail.
+const GET_KEY_MSG =
+  'Get a key at https://console.x.ai — then add credits to your team there (a new team has none).';
 
 function getApiKey(): string | undefined {
   return process.env.GROK_API_KEY ?? process.env.XAI_API_KEY;

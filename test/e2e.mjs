@@ -57,7 +57,13 @@ const env = { GROK_API_KEY: 'xai-test-key', GROK_BASE_URL: `http://127.0.0.1:${p
   check('missing key -> exit 1', r.code === 1, `exit=${r.code}`);
   check(
     'missing key -> console.x.ai message',
-    r.stderr.includes('Get your free key (includes $20 credit) at https://console.x.ai'),
+    r.stderr.includes('Get a key at https://console.x.ai') && r.stderr.includes('add credits'),
+    r.stderr.slice(0, 200),
+  );
+  // xAI grants no automatic credit (confirmed live 2026-07-16) — never promise any.
+  check(
+    'missing key -> promises no free credit',
+    !/free credit|\$20|includes .* credit/i.test(r.stderr),
     r.stderr.slice(0, 200),
   );
 }

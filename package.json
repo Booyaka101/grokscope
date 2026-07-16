@@ -1,0 +1,50 @@
+{
+  "name": "grokscope",
+  "version": "1.0.0",
+  "description": "Real-time developer community intelligence from X — powered by Grok 4.5's native X search tool. Ask, compare, and track what developers are actually saying.",
+  "type": "module",
+  "bin": {
+    "grokscope": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepack": "npm run build",
+    "test:e2e": "npm run build && node test/e2e.mjs",
+    "verify:live": "npm run build && node test/verify-live.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "grok",
+    "xai",
+    "x-search",
+    "developer-tools",
+    "cli",
+    "community",
+    "sentiment",
+    "research"
+  ],
+  "author": "Booyaka101 <cbosch101@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Booyaka101/grokscope.git"
+  },
+  "homepage": "https://github.com/Booyaka101/grokscope#readme",
+  "bugs": {
+    "url": "https://github.com/Booyaka101/grokscope/issues"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

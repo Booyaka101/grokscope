@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GrokScope — one-pager</title>
+<style>
+  @page { size: Letter; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", -apple-system, sans-serif;
+    color: #1a1a2e; width: 8.5in; height: 11in; padding: 0.55in 0.6in;
+    background: #fff;
+  }
+  .head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 3px solid #1d9bf0; padding-bottom: 10px; }
+  h1 { font-size: 30px; letter-spacing: -0.5px; }
+  h1 .scope { color: #1d9bf0; }
+  .tag { font-size: 13px; color: #536471; font-weight: 600; }
+  .lede { font-size: 13.5px; line-height: 1.45; margin: 12px 0 14px; color: #0f1419; }
+  .lede b { color: #1d9bf0; }
+  .cols { display: flex; gap: 18px; }
+  .col { flex: 1; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #1d9bf0; margin: 10px 0 6px; }
+  .term {
+    background: #0f1419; color: #e7e9ea; border-radius: 8px; padding: 12px 14px;
+    font-family: "Cascadia Code", Consolas, monospace; font-size: 9.3px; line-height: 1.5;
+    white-space: pre-wrap; margin-bottom: 10px;
+  }
+  .term .p { color: #7ee787; }
+  .term .h { color: #79c0ff; font-weight: bold; }
+  .term .c { color: #1d9bf0; }
+  .term .d { color: #8b949e; }
+  .term .v { color: #ffa657; font-weight: bold; }
+  ul { list-style: none; font-size: 12px; line-height: 1.55; }
+  ul li { padding-left: 16px; position: relative; margin-bottom: 5px; }
+  ul li::before { content: "▸"; color: #1d9bf0; position: absolute; left: 0; }
+  .steps { font-size: 12px; line-height: 1.6; counter-reset: s; }
+  .steps div { counter-increment: s; padding-left: 24px; position: relative; margin-bottom: 4px; }
+  .steps div::before {
+    content: counter(s); position: absolute; left: 0; top: 1px;
+    background: #1d9bf0; color: #fff; width: 16px; height: 16px; border-radius: 50%;
+    font-size: 10px; font-weight: 700; text-align: center; line-height: 16px;
+  }
+  code { font-family: Consolas, monospace; background: #eff3f4; padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+  .foot { position: absolute; bottom: 0.45in; left: 0.6in; right: 0.6in; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #cfd9de; padding-top: 8px; font-size: 11px; color: #536471; }
+  .price { font-size: 15px; font-weight: 800; color: #0f1419; }
+  .price small { font-weight: 600; color: #536471; font-size: 10px; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Grok<span class="scope">Scope</span> 🔭</h1>
+    <div class="tag">Real-time developer community intelligence from X — in your terminal</div>
+  </div>
+
+  <p class="lede">Stop deciding your stack from year-old blog posts. GrokScope asks <b>Grok 4.5</b> (with its native <b>X search tool</b>) what developers are saying <b>this week</b> — and every claim comes back cited to real X posts, as clickable links with recency tags.</p>
+
+  <div class="term"><span class="p">$</span> grokscope ask <span class="v">"bun vs node in 2026"</span>
+
+<span class="h">What developers are saying</span>
+Bun's 1.3 release thread drew heavy praise for install speed and built-in
+bundling <span class="c">[1]</span>. Node maintainers pushed back with 22.x perf numbers closing
+the gap <span class="c">[2]</span>. Production users report sticking with Node for ecosystem
+stability while using Bun for scripts and CI <span class="c">[3]</span> — one widely-shared
+migration postmortem called the switch "worth it for greenfield only" <span class="c">[4]</span>.
+
+<span class="h">Community Verdict:</span> the community leans Node for production workloads in
+2026, with Bun the clear favorite for local tooling and new small services.
+
+<span class="h">Sources</span>
+  1. <span class="c">https://x.com/bunjsdev/status/2076121…</span> <span class="d">(4d ago)</span>
+  2. <span class="c">https://x.com/nodesource/status/2074309…</span> <span class="d">(9d ago)</span>
+  3. <span class="c">https://x.com/backendweekly/status/2072135…</span> <span class="d">(15d ago)</span></div>
+
+  <div class="cols">
+    <div class="col">
+      <h2>Three commands</h2>
+      <div class="term"><span class="p">$</span> grokscope <span class="v">ask</span> "htmx in production?"
+<span class="d">→ 30-day research, ≥3 cited posts,
+  ends with a Community Verdict</span>
+
+<span class="p">$</span> grokscope <span class="v">compare</span> react solidjs
+<span class="d">→ pros/cons per side from real posts,
+  winner with caveats</span>
+
+<span class="p">$</span> grokscope <span class="v">trending</span> --topics "rust,go,zig"
+<span class="d">→ sentiment + top concern + momentum,
+  one paragraph per topic</span></div>
+      <h2>Use-case ideas</h2>
+      <ul>
+        <li><b>Stack decisions</b> — sanity-check a framework choice against this week's sentiment before committing.</li>
+        <li><b>Newsletter &amp; content research</b> — <code>trending</code> is a ready-made "state of X" section with sources.</li>
+        <li><b>DevRel monitoring</b> — <code>ask "our-sdk pain points" --days 7</code> in CI, piped to Slack.</li>
+        <li><b>Migration timing</b> — watch momentum turn before you jump (or don't).</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h2>Why it's different</h2>
+      <ul>
+        <li><b>Live, not indexed</b> — Grok 4.5's server-side x_search reads X in real time; no stale SEO content.</li>
+        <li><b>Every claim cited</b> — inline numbered citations, rendered as clickable terminal hyperlinks (OSC 8).</li>
+        <li><b>Recency tags</b> — post dates decoded from X snowflake IDs: you see <i>(4d ago)</i>, not "recently".</li>
+        <li><b>Filters &amp; automation</b> — <code>--handles</code>, <code>--exclude</code>, <code>--days</code>; <code>--json</code> for CI, <code>--md</code> for newsletters, <code>doctor</code> for setup checks.</li>
+        <li><b>BYOK = private &amp; cheap</b> — your xAI key, your data; exact cost printed after every query (typically a few cents).</li>
+      </ul>
+      <h2>Setup in 2 minutes</h2>
+      <div class="steps">
+        <div>Grab an API key at <b>console.x.ai</b> — new accounts include <b>$20 free credit</b> (hundreds of queries).</div>
+        <div><code>export GROK_API_KEY=xai-…</code></div>
+        <div><code>npm install -g grokscope</code> — done. Works on macOS, Linux, Windows (Node ≥ 22).</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="price">Free &amp; open source <small>· MIT license · bring your own xAI key · npm i -g grokscope</small></div>
+    <div>GrokScope — not affiliated with xAI or X Corp.</div>
+  </div>
+</body>
+</html>

@@ -24,20 +24,13 @@ node dist/cli.js trending --topics "rust,typescript,go"
 Replace `marketing/screenshot-ask.png` / `screenshot-trending.png`. Real output with real
 post URLs beats the mocked examples — HN will click the citations.
 
-## 3. GitHub repo (10 min)
+## 3. GitHub repo — ✅ DONE (live at https://github.com/Booyaka101/grokscope)
 
-```powershell
-git init; git add -A; git commit -m "GrokScope v1.0.0 — open-source Grok 4.5 x_search CLI"
-gh repo create grokscope --public --source . --push    # or create on github.com and push
-```
-Then on the repo page:
-- Description: "Real-time developer community intelligence from X, powered by Grok 4.5's native x_search — cited, clickable, in your terminal."
-- Topics: `grok`, `xai`, `cli`, `developer-tools`, `x-search`, `typescript`
-- Social preview image: `marketing/screenshot-ask.png`
-- Add `repository`, `homepage`, and `bugs` fields to package.json with the repo URL (one-line edit; do it before npm publish).
-- Optional: enable GitHub Sponsors (Settings → Features) — costs nothing, captures goodwill.
+Repo created, pushed, description + topics set, package.json has repository metadata.
 
-CI (`.github/workflows/ci.yml`) runs the 31 offline checks on Linux/Windows/macOS on every push — green checkmark on the repo from day one.
+Two leftovers that need your GitHub account in a browser:
+- **CI workflow:** the gh token lacked `workflow` scope, so `.github/workflows/ci.yml` is committed locally-excluded. Run `gh auth refresh -h github.com -s workflow` (10 s, browser approve), then tell Claude — it pushes the workflow and the green 3-OS badge appears.
+- **Social preview image** (Settings → General → Social preview): upload `marketing/screenshot-ask.png`. Optional: enable Sponsors.
 
 ## 4. npm publish (5 min)
 

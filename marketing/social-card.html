@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  /* GitHub renders social previews at exactly 1280x640. Anything else gets centre-cropped. */
+  body { width:1280px; height:640px; background:linear-gradient(135deg,#1d9bf0 0%,#0a4d7a 100%);
+         font-family:"Segoe UI",system-ui,sans-serif; display:flex; flex-direction:column;
+         justify-content:center; padding:0 62px; color:#fff; }
+  .name { font-size:60px; font-weight:800; letter-spacing:-1.5px; }
+  .name span { color:#0f1419; }
+  .tag { font-size:25px; font-weight:500; opacity:.95; margin-top:8px; }
+  .term { margin-top:26px; background:#0f1419; border-radius:11px; padding:20px 24px;
+          font-family:"Cascadia Code",Consolas,monospace; font-size:15px; line-height:1.72;
+          box-shadow:0 16px 44px rgba(0,0,0,.42);
+          white-space:pre-wrap; }  /* without this every newline collapses into one run-on line */
+  .p { color:#7ee787; } .v { color:#ffa657; }
+  .b { color:#fff; font-weight:700; }
+  .c { color:#58a6ff; text-decoration:underline; }
+  .d { color:#8b949e; }
+  .foot { margin-top:22px; display:flex; gap:26px; align-items:center; font-size:19px; font-weight:600; }
+  .pill { background:rgba(255,255,255,.16); padding:7px 17px; border-radius:999px; }
+</style></head>
+<body>
+  <div class="name">Grok<span>Scope</span> 🔭</div>
+  <div class="tag">What developers are saying on X <b>this week</b> — cited, in your terminal.</div>
+  <div class="term"><span class="p">❯</span> grokscope ask <span class="v">"bun vs node in 2026"</span>
+
+<span class="b">Community Verdict</span>
+Node remains the safe default for production and large teams; Bun is
+preferred for greenfield, CLIs, and anything where startup time and
+pure DX dominate.
+
+<span class="d">  1.</span> <span class="c">https://x.com/colinhacks/status/2075813969919607076</span> <span class="d">(5d ago)</span>
+<span class="d">  2.</span> <span class="c">https://x.com/jdalton/status/2077411139361644675</span> <span class="d">(today)</span></div>
+  <div class="foot">
+    <span class="pill">npm i -g grokscope</span>
+    <span>MIT · BYOK · Node ≥ 22</span>
+  </div>
+</body></html>

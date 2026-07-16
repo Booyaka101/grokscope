@@ -4,7 +4,7 @@
   "description": "Real-time developer community intelligence from X — powered by Grok 4.5's native X search tool. Ask, compare, and track what developers are actually saying.",
   "type": "module",
   "bin": {
-    "grokscope": "./dist/cli.js"
+    "grokscope": "dist/cli.js"
   },
   "files": [
     "dist",

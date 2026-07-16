@@ -25,7 +25,7 @@ import {
 } from './prompts.js';
 import { renderResult, renderMarkdownDoc, renderJson } from './formatter.js';
 
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 // A new xAI team starts with zero credits and 403s on every call, so getting a
 // key is only half the setup — say so here rather than letting the first call fail.
 const GET_KEY_MSG =

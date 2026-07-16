@@ -10,6 +10,7 @@ import {
   checkApi,
   resolvedModel,
   resolvedBaseUrl,
+  FORBIDDEN_HINT,
   GrokApiError,
   type XSearchConfig,
 } from './grok.js';
@@ -236,6 +237,7 @@ program
   .description('check your setup: API key, connectivity, model availability (free — no tokens spent)')
   .action(async () => {
     const rows: Array<[boolean | 'warn', string]> = [];
+    let forbiddenHint = false;
     console.log(`GrokScope doctor v${VERSION}\n`);
 
     const key = getApiKey();
@@ -254,8 +256,19 @@ program
       rows.push([false, `API reachable: no — ${health.error ?? 'unknown error'} (${resolvedBaseUrl()})`]);
     } else {
       rows.push([true, `API reachable: ${resolvedBaseUrl()} (${health.latencyMs} ms)`]);
-      if (health.keyValid === false) {
-        rows.push([false, `key valid: no (HTTP ${health.status}) — check the key at https://console.x.ai`]);
+      if (health.forbidden) {
+        rows.push([
+          false,
+          `key recognised, but this account may not make the call (HTTP 403)` +
+            `${health.detail ? ` — the API says: ${health.detail}` : ''}`,
+        ]);
+        forbiddenHint = true;
+      } else if (health.keyValid === false) {
+        rows.push([
+          false,
+          `key valid: no (HTTP ${health.status}) — check the key at https://console.x.ai` +
+            `${health.detail ? ` (${health.detail})` : ''}`,
+        ]);
       } else if (health.keyValid === true) {
         rows.push([true, 'key valid: yes']);
         const model = resolvedModel();
@@ -277,6 +290,7 @@ program
     for (const [ok, msg] of rows) {
       console.log(`  ${ok === true ? 'PASS' : ok === 'warn' ? 'WARN' : 'FAIL'}  ${msg}`);
     }
+    if (forbiddenHint) console.log(`\n${FORBIDDEN_HINT}`);
     const failed = rows.some(([ok]) => ok === false);
     console.log(
       failed

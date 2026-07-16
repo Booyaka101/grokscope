@@ -139,10 +139,17 @@ export async function askGrok(req: GrokRequest, apiKey: string): Promise<GrokRes
 
   if (!res.ok) {
     const detail = await safeErrorDetail(res);
-    if (res.status === 401 || res.status === 403) {
+    if (res.status === 401) {
       throw new GrokApiError(
-        `Authentication failed (${res.status}). Check GROK_API_KEY — get a key at https://console.x.ai${detail}`,
-        res.status,
+        `Authentication failed (401). Check GROK_API_KEY — get a key at https://console.x.ai${detail}`,
+        401,
+      );
+    }
+    if (res.status === 403) {
+      throw new GrokApiError(
+        `Your key authenticated, but this account is not permitted to make this call (403)${detail}\n` +
+          `${FORBIDDEN_HINT}\nRun \`grokscope doctor\` for the full diagnosis.`,
+        403,
       );
     }
     if (res.status === 402) {
@@ -174,8 +181,12 @@ export interface ApiHealth {
   reachable: boolean;
   latencyMs?: number;
   keyValid?: boolean;
+  /** 403: the key authenticated, but this account may not perform the call. */
+  forbidden?: boolean;
   models?: string[];
   status?: number;
+  /** The API's own explanation of a failure — the most useful line in a 403. */
+  detail?: string;
   error?: string;
 }
 
@@ -189,8 +200,25 @@ export async function checkApi(apiKey: string): Promise<ApiHealth> {
       signal: AbortSignal.timeout(15_000),
     });
     const latencyMs = Date.now() - started;
-    if (res.status === 401 || res.status === 403) {
-      return { reachable: true, latencyMs, keyValid: false, status: res.status };
+    // 401 and 403 are different diagnoses: 401 means the key was not recognised,
+    // 403 means it was — the account just may not make this call.
+    if (res.status === 401) {
+      return {
+        reachable: true,
+        latencyMs,
+        keyValid: false,
+        status: 401,
+        detail: await errorMessage(res),
+      };
+    }
+    if (res.status === 403) {
+      return {
+        reachable: true,
+        latencyMs,
+        forbidden: true,
+        status: 403,
+        detail: await errorMessage(res),
+      };
     }
     if (!res.ok) {
       return { reachable: true, latencyMs, status: res.status, error: `HTTP ${res.status}` };
@@ -208,20 +236,33 @@ export async function checkApi(apiKey: string): Promise<ApiHealth> {
   }
 }
 
-async function safeErrorDetail(res: Response): Promise<string> {
+/** A 403 is never a wrong key — these are the causes worth checking, in likelihood order. */
+export const FORBIDDEN_HINT =
+  "  This is not a wrong key — it authenticated. Usual causes:\n" +
+  '    - the key lacks access to this endpoint/model (console.x.ai -> API Keys -> edit the key)\n' +
+  '    - your team is out of credits, or billing is not set up (console.x.ai -> Billing)\n' +
+  '    - the model is not enabled for your team';
+
+/** The API's own error message, unprefixed. Empty string if the body is unreadable. */
+async function errorMessage(res: Response): Promise<string> {
   try {
     const text = await res.text();
     try {
       const parsed = JSON.parse(text) as { error?: { message?: string } | string };
       const msg =
         typeof parsed.error === 'string' ? parsed.error : parsed.error?.message;
-      return msg ? `: ${msg}` : text ? `: ${text.slice(0, 300)}` : '';
+      return msg ?? text.slice(0, 300);
     } catch {
-      return text ? `: ${text.slice(0, 300)}` : '';
+      return text.slice(0, 300);
     }
   } catch {
     return '';
   }
+}
+
+async function safeErrorDetail(res: Response): Promise<string> {
+  const msg = await errorMessage(res);
+  return msg ? `: ${msg}` : '';
 }
 
 /** Walk the Responses API `output` array into {content, citations}. */

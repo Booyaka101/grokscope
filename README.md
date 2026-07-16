@@ -24,7 +24,7 @@ Sources
 
 ## Setup (2 minutes)
 
-1. **Get an API key** at [console.x.ai](https://console.x.ai) — new xAI accounts include **$20 of free credit**, which covers hundreds of GrokScope queries (Grok 4.5 is $2/M input, $6/M output tokens; a typical query costs a few cents).
+1. **Get an API key** at [console.x.ai](https://console.x.ai), then **add credits to your team** — a brand-new team starts with none, and every call returns `403` until you do. (Grok 4.5 is $2/M input, $6/M output tokens; a typical query costs a few cents, and GrokScope prints the exact cost after every run.) If anything is off, `grokscope doctor` tells you which of these it is, for free.
 2. **Set the key** (GrokScope also accepts the standard `XAI_API_KEY`):
    ```powershell
    # PowerShell

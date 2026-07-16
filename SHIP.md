@@ -5,7 +5,9 @@ and a paid `watch`/history tier once demand shows up. Tonight is about maximum d
 
 ## 1. Get the xAI key + live verification (5 min)
 
-1. Sign in at https://console.x.ai (new accounts include $20 free credit) → create an API key.
+1. Sign in at https://console.x.ai → create an API key, **and buy credits for the team**.
+   A new team has zero credits and every call 403s until you do (confirmed 2026-07-16 —
+   there was no automatic free credit). `grokscope doctor` names this exact cause for free.
 2. In PowerShell, in this folder:
    ```powershell
    $env:GROK_API_KEY = 'xai-...'

@@ -138,10 +138,27 @@ const env = { GROK_API_KEY: 'xai-test-key', GROK_BASE_URL: `http://127.0.0.1:${p
   check('doctor -> missing key guides to console.x.ai', noKey.code === 1 && noKey.stdout.includes('https://console.x.ai'), noKey.stdout);
 }
 
+// 9b. a 403 is a permission/credit problem, NOT a wrong key — doctor must say so
+// and must surface the API's own message rather than swallowing it.
+{
+  const f = await runCli(['doctor'], { ...env, GROK_API_KEY: 'forbidden-key' });
+  check('doctor -> 403 is not reported as an invalid key', f.code === 1 && !/key valid: no/.test(f.stdout), f.stdout);
+  check('doctor -> 403 names the permission cause', /HTTP 403/.test(f.stdout) && /may not make the call/.test(f.stdout), f.stdout);
+  check('doctor -> 403 surfaces the API message', /does not have any credits remaining/.test(f.stdout), f.stdout);
+  check('doctor -> 403 points at key ACL + billing', /API Keys/.test(f.stdout) && /Billing/.test(f.stdout), f.stdout);
+}
+
 // 10. bad key on a query surfaces a helpful auth error
 {
   const r = await runCli(['ask', 'anything'], { ...env, GROK_API_KEY: 'bad-key' });
   check('query with bad key -> auth error message', r.code === 1 && /Authentication failed/.test(r.stderr) && r.stderr.includes('console.x.ai'), r.stderr);
+}
+
+// 10b. a 403 on a query explains itself instead of blaming the key
+{
+  const r = await runCli(['ask', 'anything'], { ...env, GROK_API_KEY: 'forbidden-key' });
+  check('query with forbidden key -> not blamed on the key', r.code === 1 && !/Authentication failed/.test(r.stderr), r.stderr);
+  check('query with forbidden key -> explains 403 + API message', /403/.test(r.stderr) && /does not have any credits remaining/.test(r.stderr), r.stderr);
 }
 
 await mock.close();

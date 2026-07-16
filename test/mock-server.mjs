@@ -108,9 +108,18 @@ export function createMockServer(opts = {}) {
   let postCount = 0;
   const server = http.createServer((req, res) => {
     const badKey = (req.headers.authorization ?? '') === 'Bearer bad-key';
+    // A real key whose ACL/credits do not allow the call — xAI answers 403, not 401.
+    const forbiddenKey = (req.headers.authorization ?? '') === 'Bearer forbidden-key';
 
     // GET /models — used by `grokscope doctor` (free key validation)
     if (req.method === 'GET' && req.url?.endsWith('/models')) {
+      if (forbiddenKey) {
+        res.writeHead(403, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({ error: { message: 'The team does not have any credits remaining' } }),
+        );
+        return;
+      }
       if (badKey || !/^Bearer .+/.test(req.headers.authorization ?? '')) {
         res.writeHead(401, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ error: { message: 'invalid api key' } }));
@@ -128,6 +137,13 @@ export function createMockServer(opts = {}) {
 
     if (req.method !== 'POST' || !req.url?.endsWith('/responses')) {
       res.writeHead(404).end(JSON.stringify({ error: 'not found' }));
+      return;
+    }
+    if (forbiddenKey) {
+      res.writeHead(403, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({ error: { message: 'The team does not have any credits remaining' } }),
+      );
       return;
     }
     if (badKey || !/^Bearer .+/.test(req.headers.authorization ?? '')) {

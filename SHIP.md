@@ -13,7 +13,8 @@ and a paid `watch`/history tier once demand shows up. Tonight is about maximum d
    $env:GROK_API_KEY = 'xai-...'
    npm run verify:live
    ```
-   Runs `doctor` first (free), then the three real acceptance queries (~$0.05). All checks must PASS.
+   Runs `doctor` first (free), then the three real acceptance queries (~$0.60 measured
+   2026-07-16: $0.159 + $0.292 + $0.163). All checks must PASS.
    If anything fails, bring the output to Claude — it gets fixed from the error text before launch.
 
 ## 2. Real screenshots (10 min, strongly recommended for OSS credibility)

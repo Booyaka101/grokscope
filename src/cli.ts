@@ -128,7 +128,9 @@ async function run(system: string, user: string, opts: SharedOpts, meta: RunMeta
       return;
     }
     process.stdout.write(opts.md ? renderMarkdownDoc(result) : renderResult(result));
-    // BYOK transparency: show what this query cost (grok-4.5: $2/M in, $6/M out)
+    // BYOK transparency: estimate what this query cost. Tokens are the API's own
+    // count, but the rates are hardcoded (grok-4.5: $2/M in, $6/M out) — if xAI
+    // repts, this figure drifts silently. console.x.ai billing is the truth.
     const { inputTokens, outputTokens } = result.usage ?? {};
     if (inputTokens !== undefined && outputTokens !== undefined) {
       const usd = (inputTokens * 2 + outputTokens * 6) / 1_000_000;

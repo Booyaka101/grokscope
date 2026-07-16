@@ -24,7 +24,7 @@ Sources
 
 ## Setup (2 minutes)
 
-1. **Get an API key** at [console.x.ai](https://console.x.ai), then **add credits to your team** — a brand-new team starts with none, and every call returns `403` until you do. (Grok 4.5 is $2/M input, $6/M output tokens; a typical query costs a few cents, and GrokScope prints the exact cost after every run.) If anything is off, `grokscope doctor` tells you which of these it is, for free.
+1. **Get an API key** at [console.x.ai](https://console.x.ai), then **add credits to your team** — a brand-new team starts with none, and every call returns `403` until you do. (Grok 4.5 is $2/M input, $6/M output tokens. Budget **~$0.15–$0.30 per query** — `x_search` pulls dozens of real posts into context, so a run measures 70k–140k tokens. GrokScope prints the cost after every run.) If anything is off, `grokscope doctor` tells you which of these it is, for free.
 2. **Set the key** (GrokScope also accepts the standard `XAI_API_KEY`):
    ```powershell
    # PowerShell
@@ -90,7 +90,7 @@ One POST to xAI's `/v1/responses` endpoint with the server-side `x_search` tool 
 npm install
 npm run build        # tsc -> dist/
 npm run test:e2e     # 16 checks against a doc-accurate local mock of /v1/responses
-npm run verify:live  # the 3 acceptance queries against the REAL API (needs GROK_API_KEY, ~$0.05)
+npm run verify:live  # the 3 acceptance queries against the REAL API (needs GROK_API_KEY, ~$0.60)
 npm pack             # build the distributable tarball
 ```
 

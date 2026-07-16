@@ -50,7 +50,7 @@ Three commands:
 
 Details I enjoyed building: citations render as OSC 8 clickable hyperlinks in modern terminals, and each cited post gets a recency tag by decoding the timestamp straight out of its snowflake ID — so you see "(4d ago)", not "recently". `--json` gives a stable schema (citation dates, token usage, estimated cost) for CI; `--md` outputs newsletter-ready markdown; piped output falls back to plain text.
 
-It's BYOK — your xAI key from console.x.ai (you'll need to put credits on the team first; a query costs a few cents at $2/$6 per M tokens, and the CLI prints the exact cost after each run). One POST to their /v1/responses endpoint with the x_search tool enabled — no scraping, no X API keys. The whole pipeline is testable offline against a doc-accurate mock, so contributing doesn't require a key.
+It's BYOK — your xAI key from console.x.ai (you'll need to put credits on the team first; ~$0.15-$0.30 a query at $2/$6 per M tokens, since x_search pulls dozens of real posts into context — the CLI prints the cost after each run). One POST to their /v1/responses endpoint with the x_search tool enabled — no scraping, no X API keys. The whole pipeline is testable offline against a doc-accurate mock, so contributing doesn't require a key.
 
 Repo: https://github.com/Booyaka101/grokscope
 

@@ -1,5 +1,9 @@
 # GrokScope 🔭
 
+[![CI](https://github.com/Booyaka101/grokscope/actions/workflows/ci.yml/badge.svg)](https://github.com/Booyaka101/grokscope/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/grokscope)](https://www.npmjs.com/package/grokscope)
+[![license](https://img.shields.io/npm/l/grokscope)](./LICENSE)
+
 **Real-time developer community intelligence from X — in your terminal.**
 
 GrokScope is a Node.js CLI built on **Grok 4.5** (xAI, released July 8 2026) and its native **X search tool**. Instead of googling stale blog posts, ask what developers are *actually saying on X right now* — with every claim cited back to real posts, rendered as clickable terminal links with recency tags.

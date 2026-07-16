@@ -98,7 +98,7 @@ npm run verify:live  # the 3 acceptance queries against the REAL API (needs GROK
 npm pack             # build the distributable tarball
 ```
 
-After each query the CLI prints a dim cost line to stderr (`1,600 tokens · ~$0.0049`) so BYOK users always know what they're spending. Shipping checklist lives in `SHIP.md`.
+After each query the CLI prints a dim cost line to stderr (`70,821 tokens · ~$0.1520` — a real measured run) so BYOK users always know what they're spending. Note it is an estimate from the published $2/$6-per-M rates, not xAI billing; console.x.ai is the source of truth. Shipping checklist lives in `SHIP.md`.
 
 `test/mock-server.mjs` mimics the xAI Responses API (including request-schema validation and realistic snowflake post IDs), so the full CLI pipeline is testable offline: `node test/mock-server.mjs` starts it standalone for manual demos.
 

@@ -56,20 +56,22 @@
 
   <div class="term"><span class="p">$</span> grokscope ask <span class="v">"bun vs node in 2026"</span>
 
-<span class="h">What developers are saying</span>
-Bun's 1.3 release thread drew heavy praise for install speed and built-in
-bundling <span class="c">[1]</span>. Node maintainers pushed back with 22.x perf numbers closing
-the gap <span class="c">[2]</span>. Production users report sticking with Node for ecosystem
-stability while using Bun for scripts and CI <span class="c">[3]</span> — one widely-shared
-migration postmortem called the switch "worth it for greenfield only" <span class="c">[4]</span>.
+<span class="h">What Developers Are Saying</span>
+Users report real gains switching: one developer said moving from Node to Bun
+"was a game changer… cut process usage across all my services by over 20%" <span class="c">[1]</span>.
+Colin (Zod creator, now building Nub) put it bluntly: "unless you're using the
+Bun runtime on your production servers, you shouldn't be using it in dev, and
+virtually everyone still deploys to Node." <span class="c">[2]</span>
 
-<span class="h">Community Verdict:</span> the community leans Node for production workloads in
-2026, with Bun the clear favorite for local tooling and new small services.
+<span class="h">Community Verdict:</span> Node remains the safe default for production and large
+teams; Bun is preferred for greenfield, CLIs, and anything where startup time
+and pure DX dominate.
 
 <span class="h">Sources</span>
-  1. <span class="c">https://x.com/bunjsdev/status/2076121…</span> <span class="d">(4d ago)</span>
-  2. <span class="c">https://x.com/nodesource/status/2074309…</span> <span class="d">(9d ago)</span>
-  3. <span class="c">https://x.com/backendweekly/status/2072135…</span> <span class="d">(15d ago)</span></div>
+  1. <span class="c">https://x.com/bartdominiak/status/2076939953653621055</span> <span class="d">(2d ago)</span>
+  2. <span class="c">https://x.com/colinhacks/status/2075813969919607076</span> <span class="d">(5d ago)</span>
+  3. <span class="c">https://x.com/jdalton/status/2077411139361644675</span> <span class="d">(today)</span>
+<span class="d">70,821 tokens · ~$0.1520</span></div>
 
   <div class="cols">
     <div class="col">
@@ -100,7 +102,7 @@ migration postmortem called the switch "worth it for greenfield only" <span clas
         <li><b>Every claim cited</b> — inline numbered citations, rendered as clickable terminal hyperlinks (OSC 8).</li>
         <li><b>Recency tags</b> — post dates decoded from X snowflake IDs: you see <i>(4d ago)</i>, not "recently".</li>
         <li><b>Filters &amp; automation</b> — <code>--handles</code>, <code>--exclude</code>, <code>--days</code>; <code>--json</code> for CI, <code>--md</code> for newsletters, <code>doctor</code> for setup checks.</li>
-        <li><b>BYOK = private &amp; cheap</b> — your xAI key, your data; exact cost printed after every query (typically a few cents).</li>
+        <li><b>BYOK = private</b> — your xAI key, your data; the cost is printed after every query (~$0.15–$0.30, since x_search pulls dozens of real posts into context).</li>
       </ul>
       <h2>Setup in 2 minutes</h2>
       <div class="steps">

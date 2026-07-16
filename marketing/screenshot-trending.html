@@ -1,35 +1,52 @@
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { width:1200px; height:660px; background:linear-gradient(135deg,#1d9bf0 0%,#0a4d7a 100%); display:flex; align-items:center; justify-content:center; font-family:"Cascadia Code",Consolas,monospace; }
-  .win { width:1080px; background:#0f1419; border-radius:12px; box-shadow:0 24px 80px rgba(0,0,0,.5); overflow:hidden; }
+  body { width:1200px; background:linear-gradient(135deg,#1d9bf0 0%,#0a4d7a 100%); display:flex; align-items:center; justify-content:center; padding:32px 0; font-family:"Cascadia Code",Consolas,monospace; }
+  .win { width:1120px; background:#0f1419; border-radius:12px; box-shadow:0 24px 80px rgba(0,0,0,.5); overflow:hidden; }
   .bar { background:#1c2733; padding:10px 14px; display:flex; gap:8px; align-items:center; }
   .dot { width:12px; height:12px; border-radius:50%; }
   .r{background:#ff5f57}.y{background:#febc2e}.g{background:#28c840}
   .title { color:#8b98a5; font-size:13px; margin-left:12px; }
-  .body { padding:22px 26px 26px; color:#e7e9ea; font-size:15.5px; line-height:1.6; white-space:pre-wrap; }
-  .p { color:#7ee787; } .h { color:#79c0ff; font-weight:bold; text-decoration:underline; }
-  .c { color:#58a6ff; text-decoration:underline; } .d { color:#8b949e; }
-  .v { color:#ffa657; font-weight:bold; } .b { font-weight:bold; color:#fff; }
-  .up{color:#28c840;font-weight:bold}.flat{color:#febc2e;font-weight:bold}
+  .body { padding:20px 24px 22px; color:#e7e9ea; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
+  .prompt { color:#7ee787; }
+  .b { font-weight:bold; color:#fff; }
+  .d { color:#8b949e; }
+  .u { text-decoration:underline; }
+  .c { color:#58a6ff; }
+  a { color:#58a6ff; text-decoration:underline; }
+  .cost { color:#8b949e; margin-top:10px; }
 </style></head>
 <body><div class="win">
   <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="title">grokscope — Windows Terminal</span></div>
-  <div class="body"><span class="p">❯</span> grokscope trending --topics <span class="v">"rust,typescript,go"</span>
+  <div class="body"><span class="prompt">❯</span> grokscope trending --topics "rust,typescript,go"
 
-<span class="h">Weekly buzz report</span>
-<span class="b">rust</span> — sentiment: positive. Top concern: compile times keep coming up
-in this week's threads <span class="c">[1]</span>. Momentum: <span class="up">rising</span> ↑
+<span class="b">Rust</span>  
+Sentiment is mixed-to-positive, driven by strong community activity around new TUI tools, open-source releases like Grok Build and lazyrsync, job boards listing 600+ roles, and events such as EuroRust and Solana/Rust meetups.<span class="c"><span class="u"><a href="https://x.com/orhundev/status/2077509839106785621">[1]</a></span></span><span class="c"><span class="u"><a href="https://x.com/orhundev/status/2076760832503955860">[2]</a></span></span><span class="c"><span class="u"><a href="https://x.com/ayushagarwal027/status/2077386270326853995">[3]</a></span></span> Top concern is the learning curve around the borrow checker, slow compile times, and production panics from unwraps or inconsistent error messages during ports and rewrites.<span class="c"><span class="u"><a href="https://x.com/realpastaya/status/2075224057570615611">[4]</a></span></span><span class="c"><span class="u"><a href="https://x.com/ianzepp/status/2077514764809302354">[5]</a></span></span><span class="c"><span class="u"><a href="https://x.com/lockinmarv/status/2075939004986331480">[6]</a></span></span> Momentum is rising with high-engagement tool launches, global job visibility, and conference activity.<span class="c"><span class="u"><a href="https://x.com/SuperteamAU/status/2077561870215749671">[7]</a></span></span>
 
-<span class="b">typescript</span> — sentiment: mixed. Top concern: tooling churn after the
-native-compiler previews <span class="c">[2]</span>. Momentum: <span class="flat">stable</span> →
+<span class="b">TypeScript</span>  
+Sentiment is strongly positive following the TypeScript 7.0 release (native Go port delivering 8-12x faster builds, better memory use, and improved language server).<span class="c"><span class="u"><a href="https://x.com/code/status/2076781322929139914">[8]</a></span></span><span class="c"><span class="u"><a href="https://x.com/webstandardsdev/status/2077694855526928424">[9]</a></span></span> Posts highlight project bootstraps, hiring demand, NestJS updates, and tools for AI agents.<span class="c"><span class="u"><a href="https://x.com/yourtowhid/status/2077737061944332615">[10]</a></span></span> Top concern is ecosystem readiness, including dual TS6/TS7 operation and library migration friction.<span class="c"><span class="u"><a href="https://x.com/yutafuru/status/2077725163425071445">[11]</a></span></span><span class="c"><span class="u"><a href="https://x.com/shostechdev/status/2077693267773137031">[12]</a></span></span> Momentum is rising sharply due to the performance leap and VS Code integration buzz.<span class="c"><span class="u"><a href="https://x.com/rh0kzy/status/2076476216249299234">[13]</a></span></span>
 
-<span class="b">go</span> — sentiment: positive. Top concern: generics ergonomics still split
-the community <span class="c">[3]</span>. Momentum: <span class="up">rising</span> ↑
+<span class="b">Go</span>  
+Sentiment is mixed-positive, with praise for high-throughput backend migrations, microservices, concurrency (goroutines/channels), and enterprise maintainability, plus active tool-building (C2 frameworks, DBs, PR reviewers).<span class="c"><span class="u"><a href="https://x.com/Hi_Mrinal/status/2077371600622756202">[14]</a></span></span><span class="c"><span class="u"><a href="https://x.com/rseroter/status/2077677114766299487">[15]</a></span></span> Top concern is verbose error handling, nils, lack of true enums, and concurrency pitfalls like race conditions or channel mismanagement.<span class="c"><span class="u"><a href="https://x.com/Hi_Mrinal/status/2077371600622756202">[14]</a></span></span><span class="c"><span class="u"><a href="https://x.com/0xlelouch_/status/2076776821455011877">[16]</a></span></span> Momentum is stable, reflecting steady production use, freelance demand, and incremental compiler/runtime fixes without a major release spike.<span class="c"><span class="u"><a href="https://x.com/repojournal/status/2077740154937131114">[17]</a></span></span>
 
-<span class="h">Sources</span>
-  1. <span class="c">https://x.com/rustdev/status/2078295766454807936</span> <span class="d">(1d ago)</span>
-  2. <span class="c">https://x.com/typescriptdev/status/2076121439127207936</span> <span class="d">(2d ago)</span>
-  3. <span class="c">https://x.com/godev/status/2073947112699207936</span> <span class="d">(3d ago)</span>
-<span class="d">1,340 tokens · ~$0.0041</span></div>
+<span class="b"><span class="u">Sources</span></span>
+  1. <span class="c"><span class="u"><a href="https://x.com/orhundev/status/2077509839106785621">https://x.com/orhundev/status/2077509839106785621</a></span></span> <span class="d">(today)</span>
+  2. <span class="c"><span class="u"><a href="https://x.com/orhundev/status/2076760832503955860">https://x.com/orhundev/status/2076760832503955860</a></span></span> <span class="d">(2d ago)</span>
+  3. <span class="c"><span class="u"><a href="https://x.com/ayushagarwal027/status/2077386270326853995">https://x.com/ayushagarwal027/status/2077386270326853995</a></span></span> <span class="d">(today)</span>
+  4. <span class="c"><span class="u"><a href="https://x.com/realpastaya/status/2075224057570615611">https://x.com/realpastaya/status/2075224057570615611</a></span></span> <span class="d">(6d ago)</span>
+  5. <span class="c"><span class="u"><a href="https://x.com/ianzepp/status/2077514764809302354">https://x.com/ianzepp/status/2077514764809302354</a></span></span> <span class="d">(today)</span>
+  6. <span class="c"><span class="u"><a href="https://x.com/lockinmarv/status/2075939004986331480">https://x.com/lockinmarv/status/2075939004986331480</a></span></span> <span class="d">(4d ago)</span>
+  7. <span class="c"><span class="u"><a href="https://x.com/SuperteamAU/status/2077561870215749671">https://x.com/SuperteamAU/status/2077561870215749671</a></span></span> <span class="d">(today)</span>
+  8. <span class="c"><span class="u"><a href="https://x.com/code/status/2076781322929139914">https://x.com/code/status/2076781322929139914</a></span></span> <span class="d">(2d ago)</span>
+  9. <span class="c"><span class="u"><a href="https://x.com/webstandardsdev/status/2077694855526928424">https://x.com/webstandardsdev/status/2077694855526928424</a></span></span> <span class="d">(today)</span>
+  10. <span class="c"><span class="u"><a href="https://x.com/yourtowhid/status/2077737061944332615">https://x.com/yourtowhid/status/2077737061944332615</a></span></span> <span class="d">(today)</span>
+  11. <span class="c"><span class="u"><a href="https://x.com/yutafuru/status/2077725163425071445">https://x.com/yutafuru/status/2077725163425071445</a></span></span> <span class="d">(today)</span>
+  12. <span class="c"><span class="u"><a href="https://x.com/shostechdev/status/2077693267773137031">https://x.com/shostechdev/status/2077693267773137031</a></span></span> <span class="d">(today)</span>
+  13. <span class="c"><span class="u"><a href="https://x.com/rh0kzy/status/2076476216249299234">https://x.com/rh0kzy/status/2076476216249299234</a></span></span> <span class="d">(3d ago)</span>
+  14. <span class="c"><span class="u"><a href="https://x.com/Hi_Mrinal/status/2077371600622756202">https://x.com/Hi_Mrinal/status/2077371600622756202</a></span></span> <span class="d">(1d ago)</span>
+  15. <span class="c"><span class="u"><a href="https://x.com/rseroter/status/2077677114766299487">https://x.com/rseroter/status/2077677114766299487</a></span></span> <span class="d">(today)</span>
+  16. <span class="c"><span class="u"><a href="https://x.com/0xlelouch_/status/2076776821455011877">https://x.com/0xlelouch_/status/2076776821455011877</a></span></span> <span class="d">(2d ago)</span>
+  17. <span class="c"><span class="u"><a href="https://x.com/repojournal/status/2077740154937131114">https://x.com/repojournal/status/2077740154937131114</a></span></span> <span class="d">(today)</span>
+
+<span class="cost">94,989 tokens · ~$0.2021</span></div>
 </div></body></html>

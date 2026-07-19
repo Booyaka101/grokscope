@@ -69,12 +69,10 @@ jobs:
             send "⭐ GrokScope star-watch armed. Baseline: ${stars} stars, ${forks} forks, ${issues} open issues. You'll get a ping when this moves."
           else
             if [ "$stars" -gt "$prev" ]; then
-              send "⭐ GrokScope: ${prev} → ${stars} stars (+$((stars - prev)))
-https://github.com/Booyaka101/grokscope/stargazers"
+              send "⭐ GrokScope: ${prev} → ${stars} stars (+$((stars - prev)))"$'\n'"https://github.com/Booyaka101/grokscope/stargazers"
             fi
             if [ -n "$prev_i" ] && [ "$issues" -gt "$prev_i" ]; then
-              send "💬 GrokScope: new issue/PR (${prev_i} → ${issues} open)
-https://github.com/Booyaka101/grokscope/issues"
+              send "💬 GrokScope: new issue/PR (${prev_i} → ${issues} open)"$'\n'"https://github.com/Booyaka101/grokscope/issues"
             fi
           fi
 

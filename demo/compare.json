@@ -1,0 +1,398 @@
+{
+  "meta": {
+    "command": "compare",
+    "query": "react vs solidjs",
+    "days": 7,
+    "recordedAt": "2026-07-19",
+    "model": "grok-4.5",
+    "runLive": "grokscope compare react solidjs"
+  },
+  "response": {
+    "created_at": 1784442562,
+    "completed_at": 1784442562,
+    "id": "06286ff8-c307-98c5-951f-d1f2ceb8a13f",
+    "max_output_tokens": null,
+    "model": "grok-4.5",
+    "object": "response",
+    "output": [
+      {
+        "id": "rs_06286ff8-c307-98c5-951f-d1f2ceb8a13f",
+        "summary": [
+          {
+            "text": "The user wants a comparison of React vs SolidJS based on developer community on X this week. I need to show pros/cons from actual posts, cite sources, and give a winner with caveats.\n",
+            "type": "summary_text"
+          }
+        ],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-0",
+        "input": "{\"query\":\"React vs SolidJS OR Solid.js OR \\\"Solid JS\\\" since:2024-10-01\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-0",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-1",
+        "input": "{\"query\":\"SolidJS OR \\\"Solid JS\\\" (better OR faster OR pros OR cons OR vs OR versus) React since:2024-10-01\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-1",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-2",
+        "input": "{\"query\":\"comparison of React and SolidJS developer opinions\",\"limit\":\"10\"}",
+        "name": "x_semantic_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-2",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-0",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-1",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-2",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-3",
+        "input": "{\"query\":\"SolidJS OR Solid.js OR \\\"solid js\\\" (React OR reactjs) since:2026-07-10 until:2026-07-18\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-3",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-4",
+        "input": "{\"query\":\"\\\"solid\\\" (react) (better OR worse OR vs OR versus OR compared OR performance OR faster) since:2026-07-10\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-4",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-5",
+        "input": "{\"query\":\"Why choose SolidJS over React or vice versa\",\"limit\":\"5\"}",
+        "name": "x_semantic_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-5",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-3",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-4",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-5",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-6",
+        "input": "{\"query\":\"\\\"SolidJS\\\" OR \\\"Solid.js\\\" OR solidjs (ecosystem OR jobs OR hiring OR community OR learning OR docs OR mature OR popular) since:2026-07-01\",\"limit\":\"5\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-6",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-7",
+        "input": "{\"query\":\"React (SolidJS OR \\\"Solid.js\\\" OR solidjs) (prefer OR stick OR love OR hate OR switch) since:2026-07-10\",\"limit\":\"5\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-7",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-8",
+        "input": "{\"query\":\"Ryan Carniato\",\"count\":\"1\"}",
+        "name": "x_user_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-8",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-9",
+        "input": "{\"query\":\"from:RyanCarniato since:2026-07-10\",\"limit\":\"5\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-9",
+        "status": "failed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-6",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-7",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-8",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-9",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-10",
+        "input": "{\"query\":\"React (ecosystem OR jobs OR \\\"most popular\\\" OR mature OR \\\"virtual dom\\\" OR hooks) (good OR great OR love OR best) since:2026-07-10\",\"limit\":\"5\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-10",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-11",
+        "input": "{\"query\":\"pros and cons of using React in 2026\",\"limit\":\"5\"}",
+        "name": "x_semantic_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-11",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-12",
+        "input": "{\"query\":\"SolidJS performance and reactivity advantages this week\",\"limit\":\"5\"}",
+        "name": "x_semantic_search",
+        "type": "custom_tool_call",
+        "id": "ctc_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-12",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-10",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-11",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_06286ff8-c307-98c5-951f-d1f2ceb8a13f_call-0766090f-e408-4fb5-8254-b7fd2afe9b2d-12",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "content": [
+          {
+            "type": "output_text",
+            "text": "**SolidJS vs React (mid-July 2026 community signal on X)**  \nThis week’s discussion (roughly July 12–18 2026) is lighter on pure head-to-heads than some periods, but clear themes emerge from developers who have used both, Solid core contributors, and people sharing stacks/experiences. SolidJS posts emphasize raw performance, reactivity, and modern async DX. React posts (and adjacent commentary) stress ecosystem gravity, “good enough” reliability, and institutional inertia.[[1]](https://x.com/codylindley/status/2077158617120416179)\n\nI pulled directly from recent posts via keyword + semantic search. Citations point to the exact posts.\n\n### SolidJS Pros (from actual posts)\n- **Performance is a night-and-day difference**: Multiple devs who switched say they never want to go back.  \n  “highly recommend trying solidjs instead of react. It's so so so much more performant after switching I never want to touch react again.”[[2]](https://x.com/0xKruger/status/2077732591273189548)\n- **Superior default async / Suspense behavior**: Solid 2.0 keeps previous content on screen during refetches instead of tearing down and flashing spinners (React requires explicit `useTransition` to avoid this).  \n  “React's Suspense can tear down your rendered content and flash the spinner whenever the data behind it refetches, unless you wrap the update in useTransition. SolidJS 2.0 flips the default: after the first paint, a refetch just keeps the old content on screen.”[[3]](https://x.com/morellodev/status/2078215989846585755)  \n  Related deep-dive mapping Solid 2.0 async (promises in the reactive graph, Loading boundary, isPending, generator actions) specifically for React devs.[[4]](https://x.com/morellodev/status/2078215992107262118)\n- **Cleaner, more elegant mental model**: Fine-grained reactivity (signals) feels simpler once you leave the VDOM mindset.  \n  “We somehow survived to the React way of doing things 😅 The SolidJS mental model is easier and more elegant.”[[5]](https://x.com/morellodev/status/2078098748555637238)  \n  “I love how you guys handled async with Solid 2.0. The API is truly chef’s kiss. … It’s incredibly difficult for me to use React these days because of things like this.”[[6]](https://x.com/The_Danchez/status/2077822867484389886)\n- **Emerging in agentic / modern stacks**: One developer explicitly split stacks—manual work still on React/Next, but agentic work on SolidJS + TanStack Start + PandaCSS.[[7]](https://x.com/_MichaelMusil/status/2077657668781482340)\n\n### SolidJS Cons (from actual posts)\n- **Bundle size trade-off in Solid 2.0**: Creator Ryan Carniato noted that the streamlined API made async non-treeshakeable, so a signals counter example went from <5 kb (Solid 1.x / comparable Preact) to just under 10 kb. They accept this for real capability and ecosystem composition.[[8]](https://x.com/RyanCarniato/status/2077775773755474114)\n- **JSX / familiarity friction for tools & agents**: Valid React JSX can be invalid in Solid; AI agents sometimes stumble on the differences (though they usually self-correct with lint + tests).[[9]](https://x.com/guillaume_slls/status/2077054065284927949)\n- **Smaller surface area implied**: Fewer “just works” ecosystem defaults and less mindshare than React (jobs, tutorials, third-party components still skew heavily React).\n\n### React Pros (from actual posts)\n- **Institutional safety + massive infrastructure**: Still described as the default “safe” choice.  \n  “describe React today as the Java of frontend development: not the cleanest, fastest or most modern system, but sufficiently capable, institutionally safe and surrounded by so much infrastructure that technical superiority alone is not enough to displace it.”[[1]](https://x.com/codylindley/status/2077158617120416179)\n- **Ecosystem & tooling gravity**: Next.js, huge component libraries, hiring demand, and battle-tested patterns keep winning by default for production teams. (Many “I use React/Next” posts this week treat it as the unremarkable baseline.)\n- **Familiarity for humans and (sometimes) agents**: Enormous training data means more Stack Overflow answers, more AI-generated code that “just works” out of the box for common patterns (though some note version churn hurts agents).\n\n### React Cons (from actual posts)\n- **Performance tax of the VDOM model**: You constantly fight re-renders with memo/PureComponent/hooks.  \n  “React is overrated (not reactive programming). Most of the time, you will be satisfying shouldComponentUpdate through PureComponent, hooks, and manual memoization. React promises you something that, by its own design, it cannot deliver: performance. The entire idea of the Virtual DOM boils down to you becoming a slave to shouldComponentUpdate.”[[10]](https://x.com/YodaPunk/status/2078546090903609817)\n- **Feels dated after using Solid**: Devs who try Solid often report friction returning to React’s mental model and async ergonomics.[[6]](https://x.com/The_Danchez/status/2077822867484389886)\n- **Extra ceremony for good UX**: Suspense tearing, transition wrappers, and manual optimization are recurring pain points when compared directly to Solid 2.0.[[3]](https://x.com/morellodev/status/2078215989846585755)\n\n### Winner (with caveats)\n**SolidJS wins on technical merits and developer happiness for new or performance-sensitive greenfield work this week.** The performance claims, async defaults, and “I never want to touch React again” sentiment are consistent and come from people who actually switched. Ryan Carniato’s own transparency about 2.0 size trade-offs actually strengthens credibility—Solid is optimizing for real apps, not toy benchmarks.[[8]](https://x.com/RyanCarniato/status/2077775773755474114)\n\n**Caveats / when React still wins**:\n- Large existing codebases, enterprise teams, or heavy hiring needs → React’s ecosystem and “nobody gets fired for choosing React” moat remain decisive.[[1]](https://x.com/codylindley/status/2077158617120416179)\n- If you need the absolute maximum third-party component/library coverage or Next.js-style full-stack batteries today, React/Next is still the path of least resistance.\n- Solid’s smaller community means more “build it yourself” or fewer battle-tested solutions for niche problems.\n- AI coding agents are still more fluent in React JSX patterns (though the gap is closing and Solid users report agents recover quickly).\n\n**Bottom line from this week’s signal**: If you’re starting something new and care about runtime performance + clean reactivity, try SolidJS (especially 2.0). You’ll likely feel the difference immediately. If you’re optimizing for hiring, longevity of existing React investment, or maximum ecosystem glue, stay with React—just know the “Java of frontend” critique is being echoed more openly. The two can also coexist (islands, Astro, etc.), and several posts treat them as complementary rather than pure enemies.",
+            "logprobs": [],
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://x.com/codylindley/status/2077158617120416179",
+                "start_index": 477,
+                "end_index": 536,
+                "title": "1"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/0xKruger/status/2077732591273189548",
+                "start_index": 928,
+                "end_index": 984,
+                "title": "2"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/morellodev/status/2078215989846585755",
+                "start_index": 1464,
+                "end_index": 1522,
+                "title": "3"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/morellodev/status/2078215992107262118",
+                "start_index": 1678,
+                "end_index": 1736,
+                "title": "4"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/morellodev/status/2078098748555637238",
+                "start_index": 1973,
+                "end_index": 2031,
+                "title": "5"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/The_Danchez/status/2077822867484389886",
+                "start_index": 2205,
+                "end_index": 2264,
+                "title": "6"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/_MichaelMusil/status/2077657668781482340",
+                "start_index": 2435,
+                "end_index": 2496,
+                "title": "7"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/RyanCarniato/status/2077775773755474114",
+                "start_index": 2821,
+                "end_index": 2881,
+                "title": "8"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/guillaume_slls/status/2077054065284927949",
+                "start_index": 3076,
+                "end_index": 3138,
+                "title": "9"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/codylindley/status/2077158617120416179",
+                "start_index": 3709,
+                "end_index": 3768,
+                "title": "1"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/YodaPunk/status/2078546090903609817",
+                "start_index": 4733,
+                "end_index": 4790,
+                "title": "10"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/The_Danchez/status/2077822867484389886",
+                "start_index": 4924,
+                "end_index": 4983,
+                "title": "6"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/morellodev/status/2078215989846585755",
+                "start_index": 5143,
+                "end_index": 5201,
+                "title": "3"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/RyanCarniato/status/2077775773755474114",
+                "start_index": 5645,
+                "end_index": 5705,
+                "title": "8"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/codylindley/status/2077158617120416179",
+                "start_index": 5896,
+                "end_index": 5955,
+                "title": "1"
+              }
+            ]
+          }
+        ],
+        "id": "msg_06286ff8-c307-98c5-951f-d1f2ceb8a13f",
+        "role": "assistant",
+        "type": "message",
+        "status": "completed"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "previous_response_id": null,
+    "reasoning": {
+      "effort": "high",
+      "summary": "detailed"
+    },
+    "temperature": 0.7,
+    "text": {
+      "format": {
+        "type": "text"
+      }
+    },
+    "tool_choice": "auto",
+    "tools": [
+      {
+        "type": "x_search",
+        "from_date": "2026-07-12"
+      }
+    ],
+    "top_p": 0.95,
+    "usage": {
+      "input_tokens": 48189,
+      "input_tokens_details": {
+        "cached_tokens": 30848
+      },
+      "output_tokens": 2656,
+      "output_tokens_details": {
+        "reasoning_tokens": 1169
+      },
+      "total_tokens": 50845,
+      "num_sources_used": 0,
+      "num_server_side_tools_used": 12,
+      "cost_in_usd_ticks": 1198724000,
+      "server_side_tool_usage_details": {
+        "web_search_calls": 0,
+        "x_search_calls": 12,
+        "code_interpreter_calls": 0,
+        "file_search_calls": 0,
+        "mcp_calls": 0,
+        "document_search_calls": 0,
+        "image_generation_calls": 0
+      },
+      "context_details": {
+        "input_tokens": 17256,
+        "output_tokens": 1770
+      }
+    },
+    "user": null,
+    "incomplete_details": null,
+    "status": "completed",
+    "store": true,
+    "metadata": {
+      "system_fingerprint": "fp_a39489019fa99b6e"
+    },
+    "background": false,
+    "service_tier": "default",
+    "truncation": "disabled",
+    "top_logprobs": 0,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "prompt_cache_key": null,
+    "max_tool_calls": null,
+    "safety_identifier": null,
+    "error": null,
+    "instructions": "You are a developer research assistant doing head-to-head technology comparisons from live community signal on X. Always cite the actual posts you draw from."
+  }
+}

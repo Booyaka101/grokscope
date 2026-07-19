@@ -1,0 +1,405 @@
+{
+  "meta": {
+    "command": "trending",
+    "query": "rust, typescript, go",
+    "days": 7,
+    "recordedAt": "2026-07-19",
+    "model": "grok-4.5",
+    "runLive": "grokscope trending --topics \"rust,typescript,go\""
+  },
+  "response": {
+    "created_at": 1784442591,
+    "completed_at": 1784442591,
+    "id": "74f503ec-1f81-9f24-8d84-bb9587b08679",
+    "max_output_tokens": null,
+    "model": "grok-4.5",
+    "object": "response",
+    "output": [
+      {
+        "id": "rs_74f503ec-1f81-9f24-8d84-bb9587b08679",
+        "summary": [
+          {
+            "text": "The user wants me to analyze X posts from this week for rust, typescript, and go. For each: sentiment (positive/negative/mixed), top concern, and momentum direction (rising/falling/stable). Concise, o...",
+            "type": "summary_text"
+          }
+        ],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-0",
+        "input": "{\"query\":\"rust (lang OR language OR programming) OR rustlang OR #rustlang\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-0",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-1",
+        "input": "{\"query\":\"typescript OR #typescript OR \\\"type script\\\"\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-1",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-2",
+        "input": "{\"query\":\"golang OR \\\"go lang\\\" OR #golang OR (go programming)\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-2",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-0",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-1",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-2",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-3",
+        "input": "{\"query\":\"(rustlang OR #rust OR \\\"rust lang\\\" OR \\\"rust programming\\\" OR \\\"rust language\\\") since:2026-07-13\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-3",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-4",
+        "input": "{\"query\":\"(typescript OR #typescript OR \\\"type script\\\") since:2026-07-13\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-4",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-5",
+        "input": "{\"query\":\"(golang OR #golang OR \\\"go lang\\\" OR \\\"go programming\\\" OR \\\"go language\\\") since:2026-07-13\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-5",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-3",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-4",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-5",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-6",
+        "input": "{\"query\":\"opinions on Rust programming language this week\",\"limit\":\"10\"}",
+        "name": "x_semantic_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-6",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-7",
+        "input": "{\"query\":\"opinions on TypeScript programming language this week\",\"limit\":\"10\"}",
+        "name": "x_semantic_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-7",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-8",
+        "input": "{\"query\":\"opinions on Go golang programming language this week\",\"limit\":\"10\"}",
+        "name": "x_semantic_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-8",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-6",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-7",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-8",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-9",
+        "input": "{\"query\":\"rustlang OR \\\"rust programming\\\" OR #rustlang since:2026-07-13\",\"limit\":\"5\",\"mode\":\"Top\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-9",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-10",
+        "input": "{\"query\":\"typescript OR #typescript since:2026-07-13 min_faves:5\",\"limit\":\"5\",\"mode\":\"Top\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-10",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-11",
+        "input": "{\"query\":\"golang OR #golang OR \\\"go programming\\\" since:2026-07-13 min_faves:5\",\"limit\":\"5\",\"mode\":\"Top\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-11",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-9",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-10",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_74f503ec-1f81-9f24-8d84-bb9587b08679_call-14d10b4c-6ee3-474a-a89e-b42467e3b14d-11",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "content": [
+          {
+            "type": "output_text",
+            "text": "**Rust**  \nSentiment is mixed, with strong praise for memory safety, performance, type system, and suitability for systems/AI/agentic coding, tempered by frustrations over slow compile times, painful rust-analyzer on large codebases, messy async, and perceived complexity or weak stdlib.[[1]](https://x.com/rednafi/status/2076982197542588822)[[2]](https://x.com/ashu210890/status/2076998985315963310)[[3]](https://x.com/AutisticOvrflow/status/2078372062347829360)[[4]](https://x.com/Citrullin/status/2078473150942081515) Top concern is tooling/compile-time friction and async ergonomics. Momentum is rising, shown by new fan conversions, learning series, production projects (e.g., native Rust apps), and AI code-gen endorsements.[[5]](https://x.com/_NakulBhardwaj_/status/2078721202873655730)[[6]](https://x.com/drbaph/status/2077928560946184305)\n\n**TypeScript**  \nSentiment is positive, highlighting superior safety, tooling, refactoring ease, scalability over plain JS, popularity growth (noted as 3rd most popular), and better AI-generated code support.[[7]](https://x.com/icookandcode/status/2076322945626980550)[[8]](https://x.com/SweetTechAZ/status/2078179991859151283)[[9]](https://x.com/swapnakpanda/status/2077827900271894737) Top concern is overly complex type definitions (often leading to `any` casts), plus runtime performance and npm ecosystem risks for non-frontend use.[[10]](https://x.com/lhk_SE/status/2078396346562756827)[[11]](https://x.com/Radicalbyte343/status/2078251984394588416) Momentum is rising amid widespread adoption in full-stack/web/AI contexts and ongoing feature evolution.[[7]](https://x.com/icookandcode/status/2076322945626980550)\n\n**Go**  \nSentiment is mixed: lauded for simplicity, predictability, high performance in networking/microservices (e.g., throughput gains), enterprise maintainability, and \"boring\" suitability for AI-generated code, but criticized for verbosity, poor error handling, missing enums/true generics polish, nils, and restrictive feel that reduces expressiveness.[[12]](https://x.com/Hi_Mrinal/status/2077371600622756202)[[13]](https://x.com/prints_twt/status/2076397279246954869)[[14]](https://x.com/rseroter/status/2078122550186705233)[[15]](https://x.com/danielBrenot/status/2078703557155369438) Top concern is verbose error handling (`if err != nil`) and limited modern features. Momentum is stable, with steady project-sharing, learning posts, and recognition in cloud/AI-era contexts without major hype spikes or declines.[[16]](https://x.com/Greegman/status/2076734012635463791)[[17]](https://x.com/fromcodetocloud/status/2078049276274614513)",
+            "logprobs": [],
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://x.com/rednafi/status/2076982197542588822",
+                "start_index": 287,
+                "end_index": 342,
+                "title": "1"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/ashu210890/status/2076998985315963310",
+                "start_index": 342,
+                "end_index": 400,
+                "title": "2"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/AutisticOvrflow/status/2078372062347829360",
+                "start_index": 400,
+                "end_index": 463,
+                "title": "3"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/Citrullin/status/2078473150942081515",
+                "start_index": 463,
+                "end_index": 520,
+                "title": "4"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/_NakulBhardwaj_/status/2078721202873655730",
+                "start_index": 730,
+                "end_index": 793,
+                "title": "5"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/drbaph/status/2077928560946184305",
+                "start_index": 793,
+                "end_index": 847,
+                "title": "6"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/icookandcode/status/2076322945626980550",
+                "start_index": 1057,
+                "end_index": 1117,
+                "title": "7"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/SweetTechAZ/status/2078179991859151283",
+                "start_index": 1117,
+                "end_index": 1176,
+                "title": "8"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/swapnakpanda/status/2077827900271894737",
+                "start_index": 1176,
+                "end_index": 1236,
+                "title": "9"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/lhk_SE/status/2078396346562756827",
+                "start_index": 1386,
+                "end_index": 1441,
+                "title": "10"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/Radicalbyte343/status/2078251984394588416",
+                "start_index": 1441,
+                "end_index": 1504,
+                "title": "11"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/icookandcode/status/2076322945626980550",
+                "start_index": 1609,
+                "end_index": 1669,
+                "title": "7"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/Hi_Mrinal/status/2077371600622756202",
+                "start_index": 2028,
+                "end_index": 2086,
+                "title": "12"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/prints_twt/status/2076397279246954869",
+                "start_index": 2086,
+                "end_index": 2145,
+                "title": "13"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/rseroter/status/2078122550186705233",
+                "start_index": 2145,
+                "end_index": 2202,
+                "title": "14"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/danielBrenot/status/2078703557155369438",
+                "start_index": 2202,
+                "end_index": 2263,
+                "title": "15"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/Greegman/status/2076734012635463791",
+                "start_index": 2493,
+                "end_index": 2550,
+                "title": "16"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/fromcodetocloud/status/2078049276274614513",
+                "start_index": 2550,
+                "end_index": 2614,
+                "title": "17"
+              }
+            ]
+          }
+        ],
+        "id": "msg_74f503ec-1f81-9f24-8d84-bb9587b08679",
+        "role": "assistant",
+        "type": "message",
+        "status": "completed"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "previous_response_id": null,
+    "reasoning": {
+      "effort": "high",
+      "summary": "detailed"
+    },
+    "temperature": 0.7,
+    "text": {
+      "format": {
+        "type": "text"
+      }
+    },
+    "tool_choice": "auto",
+    "tools": [
+      {
+        "type": "x_search",
+        "from_date": "2026-07-12"
+      }
+    ],
+    "top_p": 0.95,
+    "usage": {
+      "input_tokens": 83391,
+      "input_tokens_details": {
+        "cached_tokens": 51968
+      },
+      "output_tokens": 2402,
+      "output_tokens_details": {
+        "reasoning_tokens": 1846
+      },
+      "total_tokens": 85793,
+      "num_sources_used": 0,
+      "num_server_side_tools_used": 12,
+      "cost_in_usd_ticks": 1528484000,
+      "server_side_tool_usage_details": {
+        "web_search_calls": 0,
+        "x_search_calls": 12,
+        "code_interpreter_calls": 0,
+        "file_search_calls": 0,
+        "mcp_calls": 0,
+        "document_search_calls": 0,
+        "image_generation_calls": 0
+      },
+      "context_details": {
+        "input_tokens": 31237,
+        "output_tokens": 751
+      }
+    },
+    "user": null,
+    "incomplete_details": null,
+    "status": "completed",
+    "store": true,
+    "metadata": {
+      "system_fingerprint": "fp_a39489019fa99b6e"
+    },
+    "background": false,
+    "service_tier": "default",
+    "truncation": "disabled",
+    "top_logprobs": 0,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "prompt_cache_key": null,
+    "max_tool_calls": null,
+    "safety_identifier": null,
+    "error": null,
+    "instructions": "You are a developer trend analyst working from live X posts. Ground every claim in real posts and cite them."
+  }
+}

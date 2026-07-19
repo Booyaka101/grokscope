@@ -63,6 +63,7 @@ npx grokscope demo --all    # ask + compare + trending
 | `grokscope compare <techA> <techB>` | Head-to-head community sentiment with pros/cons per side, cited, plus a winner with caveats | this week |
 | `grokscope trending --topics "rust,typescript,go"` | Per-topic buzz report: sentiment, top concern, momentum (rising/falling/stable) | this week |
 | `grokscope doctor` | 10-second setup check: key present, API reachable, key valid, model available — free, spends no tokens | — |
+| `grokscope history [index]` | List recently cached results, or re-print one by index — **free, no tokens**. Honours `--json` / `--md` | — |
 | `grokscope demo [which]` | Replay a recorded real run (`ask` / `compare` / `trending`, or `--all`) — **no API key or credits**. Honours `--json` / `--md` | — |
 
 **Options (all search commands):**
@@ -73,6 +74,19 @@ npx grokscope demo --all    # ask + compare + trending
 - `--images` / `--videos` — let Grok analyze media inside posts
 - `--json` — stable machine-readable output: content, numbered citations with `postedAt`/`recency`, source URLs, token usage with `estimatedCostUsd`. Built for CI jobs and dashboards.
 - `--md` — clean markdown with an ISO-dated `## Sources` section. Built for pasting into newsletters and docs (`>> newsletter.md`).
+- `--fresh` — bypass the cache and fetch a fresh result (and overwrite the cached copy).
+- `--max-age <hours>` — ignore cached results older than this many hours (default `24`).
+
+## Caching & history
+
+Every successful query is cached under `GROKSCOPE_HOME` (default `~/.grokscope`), keyed by a hash of the request (model + prompt + search window). An **identical repeat** — including the same query re-rendered as `--json` or `--md` — is served from disk for free, with a dim `(from cache)` note and no cost line. Use `--fresh` to force a live call, or `--max-age <hours>` to control how stale a hit may be.
+
+```bash
+grokscope history        # list recent cached results (index, command, date, query)
+grokscope history 1      # re-print entry #1 for free (parse + render, no tokens)
+```
+
+`demo` and `doctor` never touch the cache.
 
 **Examples:**
 
@@ -94,6 +108,7 @@ Output is markdown-aware: bold headers, inline citations as blue clickable links
 | `GROK_API_KEY` (or `XAI_API_KEY`) | xAI API key — **required** | — |
 | `GROK_MODEL` | model ID | `grok-4.5` |
 | `GROK_BASE_URL` | API base (useful for proxies/testing) | `https://api.x.ai/v1` |
+| `GROKSCOPE_HOME` | cache directory for `history` / repeat queries | `~/.grokscope` |
 | `NO_COLOR` | disable ANSI styling | — |
 
 ## How it works
@@ -105,18 +120,18 @@ One POST to xAI's `/v1/responses` endpoint with the server-side `x_search` tool 
 ```bash
 npm install
 npm run build        # tsc -> dist/
-npm run test:e2e     # 16 checks against a doc-accurate local mock of /v1/responses
+npm run test:e2e     # 67 checks against a doc-accurate local mock of /v1/responses
 npm run verify:live  # the 3 acceptance queries against the REAL API (needs GROK_API_KEY, ~$0.60)
 npm pack             # build the distributable tarball
 ```
 
-After each query the CLI prints a dim cost line to stderr (`70,821 tokens · ~$0.1520` — a real measured run) so BYOK users always know what they're spending. Note it is an estimate from the published $2/$6-per-M rates, not xAI billing; console.x.ai is the source of truth. Shipping checklist lives in `SHIP.md`.
+After each query the CLI prints a dim cost line to stderr (`70,821 tokens · ~$0.1520` — a real measured run) so BYOK users always know what they're spending. Note it is an estimate from the published per-model rates ($2/$6-per-M for grok-4.5), not xAI billing; console.x.ai is the source of truth. If you point `GROK_MODEL` at a model with no published rate here, the token count still prints but the dollar figure is omitted rather than guessed. Shipping checklist lives in `SHIP.md`.
 
 `test/mock-server.mjs` mimics the xAI Responses API (including request-schema validation and realistic snowflake post IDs), so the full CLI pipeline is testable offline: `node test/mock-server.mjs` starts it standalone for manual demos.
 
 ## Contributing
 
-Issues and PRs welcome. The whole pipeline is testable offline (`npm run test:e2e` — 31 checks against a doc-accurate mock of xAI's `/v1/responses`), so you don't need an API key to hack on it. Good first contributions: new command modes (release-reaction reports, pain-point digests), output formats, or a `watch` mode with stored history.
+Issues and PRs welcome. The whole pipeline is testable offline (`npm run test:e2e` — 67 checks against a doc-accurate mock of xAI's `/v1/responses`), so you don't need an API key to hack on it. Good first contributions: new command modes (release-reaction reports, pain-point digests), output formats, or a `watch` mode with stored history.
 
 ## License
 

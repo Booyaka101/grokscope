@@ -12,11 +12,16 @@
 
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { mkdtempSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { createMockServer } from './mock-server.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(root, 'dist', 'cli.js');
+
+// Keep the cache off the developer's real ~/.grokscope for the whole run.
+const TMP_HOME = mkdtempSync(path.join(os.tmpdir(), 'grokscope-e2e-'));
 
 function runCli(args, env) {
   return new Promise((resolve) => {
@@ -38,6 +43,8 @@ function cleanEnv() {
   delete env.XAI_API_KEY;
   delete env.GROK_BASE_URL;
   delete env.GROK_MODEL;
+  // Default cache home for every spawned CLI; individual tests may override it.
+  env.GROKSCOPE_HOME = path.join(TMP_HOME, 'home-main');
   return env;
 }
 
@@ -173,7 +180,7 @@ await mock.close();
 {
   const flaky = createMockServer({ failFirst: 1 });
   const flakyPort = await flaky.listen();
-  const r = await runCli(['ask', 'bun vs node'], {
+  const r = await runCli(['ask', 'bun vs node', '--fresh'], {
     GROK_API_KEY: 'xai-test-key',
     GROK_BASE_URL: `http://127.0.0.1:${flakyPort}/v1`,
   });
@@ -221,6 +228,140 @@ await mock.close();
 
   const dbad = await runCli(['demo', 'nonsense'], demoEnv);
   check('demo unknown -> exit 1 with guidance', dbad.code === 1 && /Unknown demo/.test(dbad.stderr), dbad.stderr.slice(0, 150));
+}
+
+// 13. >20 handles -> client-side error, exit 1, NO API call (finding #4)
+{
+  const hmock = createMockServer();
+  const hport = await hmock.listen();
+  const many = Array.from({ length: 21 }, (_, i) => `h${i}`).join(',');
+  const r = await runCli(['ask', 'too many handles', '--handles', many], {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${hport}/v1`,
+  });
+  check('handles cap -> exit 1 with flag-named error', r.code === 1 && /--handles accepts at most 20 handles \(got 21\)/.test(r.stderr), r.stderr.slice(0, 200));
+  check('handles cap -> rejected before any API call', hmock.requests.length === 0, `requests=${hmock.requests.length}`);
+  await hmock.close();
+}
+
+// 14. --handles + --exclude -> flag-named conflict, before the key check (finding #9)
+{
+  const r = await runCli(['ask', 'conflict probe', '--handles', 'a', '--exclude', 'b'], {});
+  check('handles/exclude conflict -> flag-named error, exit 1', r.code === 1 && /--handles and --exclude can't be combined\./.test(r.stderr), r.stderr.slice(0, 200));
+  check('handles/exclude conflict -> checked before the API key', !/Get a key at https:\/\/console\.x\.ai/.test(r.stderr), r.stderr.slice(0, 200));
+}
+
+// 15. 5xx with NO Retry-After header -> backoff runs, retry succeeds (finding #2)
+{
+  const s = createMockServer({ failFirst: 1, failFirstStatus: 503, failFirstNoRetryAfter: true });
+  const sport = await s.listen();
+  const r = await runCli(['ask', 'server error probe', '--fresh'], {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${sport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'srv-home'),
+  });
+  check('5xx no Retry-After -> retries and succeeds', r.code === 0 && r.stdout.includes('Community Verdict'), r.stderr.slice(0, 200));
+  check('5xx no Retry-After -> exactly one retry (2 requests)', s.requests.length === 2 && s.requests[0].status === 503, JSON.stringify(s.requests.map((x) => x.status)));
+  await s.close();
+}
+
+// 16. 402 out of credits -> friendly top-up message (finding surfaced via grok.ts)
+{
+  const p = createMockServer({ respondStatus: 402, errorMessage: 'Your team has no credits remaining' });
+  const pport = await p.listen();
+  const r = await runCli(['ask', 'credits probe', '--fresh'], {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${pport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'credits-home'),
+  });
+  check('402 -> out-of-credits message, exit 1', r.code === 1 && /out of credits/i.test(r.stderr) && /console\.x\.ai/.test(r.stderr), r.stderr.slice(0, 200));
+  await p.close();
+}
+
+// 17. non-JSON 200 -> friendly unreadable-response error (finding #6)
+{
+  const nj = createMockServer({ respondNonJson: true });
+  const njport = await nj.listen();
+  const r = await runCli(['ask', 'nonjson probe', '--fresh'], {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${njport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'nonjson-home'),
+  });
+  check('non-JSON 200 -> unreadable-response error, exit 1', r.code === 1 && /unreadable \(non-JSON\) response/i.test(r.stderr), r.stderr.slice(0, 200));
+  await nj.close();
+}
+
+// 18. status: incomplete with partial content -> render + truncation warning (finding #7)
+{
+  const inc = createMockServer({ respondIncomplete: true });
+  const incport = await inc.listen();
+  const r = await runCli(['ask', 'incomplete probe', '--fresh'], {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${incport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'inc-home'),
+  });
+  check('incomplete -> still renders partial content, exit 0', r.code === 0 && r.stdout.includes('Community Verdict'), r.stdout.slice(-200));
+  check('incomplete -> warns the response was truncated', /truncated/i.test(r.stderr), r.stderr.slice(0, 200));
+  await inc.close();
+}
+
+// 19. inline citation renumbering: out-of-order [[3]]/[[1]] match the Sources order (finding #3)
+{
+  const rm = createMockServer({ outOfOrderCitations: true });
+  const rport = await rm.listen();
+  const r = await runCli(['ask', 'renumber probe', '--fresh'], {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${rport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'renum-home'),
+  });
+  check('renumber -> exit 0', r.code === 0, r.stderr.slice(0, 200));
+  check(
+    'renumber -> first-cited source is [1], not the model literal [3]',
+    /\[1\]\s*\(https:\/\/x\.com\/firstsource\//.test(r.stdout) && !/\[3\]\s*\(https:\/\/x\.com\/firstsource\//.test(r.stdout),
+    r.stdout,
+  );
+  check('renumber -> second source is [2] (was model literal 1)', /\[2\]\s*\(https:\/\/x\.com\/secondsource\//.test(r.stdout), r.stdout);
+  check(
+    'renumber -> Sources numbered by first appearance',
+    /1\.\s*https:\/\/x\.com\/firstsource\//.test(r.stdout) && /2\.\s*https:\/\/x\.com\/secondsource\//.test(r.stdout),
+    r.stdout.slice(-300),
+  );
+  await rm.close();
+}
+
+// 20. caching: identical repeat is free; --fresh forces a call; history lists + re-prints (feature C)
+{
+  const cmock = createMockServer();
+  const cport = await cmock.listen();
+  const cenv = {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${cport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'cache-home'),
+  };
+
+  const first = await runCli(['ask', 'cache probe alpha'], cenv);
+  check('cache -> first call succeeds', first.code === 0, first.stderr.slice(0, 200));
+  check('cache -> first call makes one API hit', cmock.requests.length === 1, `requests=${cmock.requests.length}`);
+
+  const second = await runCli(['ask', 'cache probe alpha'], cenv);
+  check('cache -> identical repeat makes 0 new API hits', second.code === 0 && cmock.requests.length === 1, `code=${second.code} requests=${cmock.requests.length}`);
+  check('cache -> repeat notes (from cache)', /from cache/i.test(second.stderr), second.stderr.slice(0, 200));
+  check('cache -> repeat still renders the result', second.stdout.includes('Community Verdict'), second.stdout.slice(-200));
+
+  const fresh = await runCli(['ask', 'cache probe alpha', '--fresh'], cenv);
+  check('cache -> --fresh forces a real API call', fresh.code === 0 && cmock.requests.length === 2, `requests=${cmock.requests.length}`);
+
+  const listOut = await runCli(['history'], cenv);
+  check('history -> lists the cached entry', listOut.code === 0 && /cache probe alpha/.test(listOut.stdout), listOut.stdout.slice(0, 300));
+
+  const hitsBefore = cmock.requests.length;
+  const show = await runCli(['history', '1'], cenv);
+  check(
+    'history <n> -> re-prints for free (0 new API hits)',
+    show.code === 0 && cmock.requests.length === hitsBefore && show.stdout.includes('Community Verdict'),
+    `code=${show.code} requests=${cmock.requests.length}`,
+  );
+  await cmock.close();
 }
 
 const failed = results.filter((r) => !r.pass).length;

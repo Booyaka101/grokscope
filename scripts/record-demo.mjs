@@ -15,8 +15,8 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   askSystem,
-  COMPARE_SYSTEM,
-  TRENDING_SYSTEM,
+  compareSystem,
+  trendingSystem,
   comparePrompt,
   trendingPrompt,
   daysAgoISO,
@@ -47,7 +47,7 @@ const DEMOS = [
     command: 'compare',
     query: 'react vs solidjs',
     days: WINDOW_DAYS.compare,
-    system: COMPARE_SYSTEM,
+    system: compareSystem(WINDOW_DAYS.compare),
     user: comparePrompt('react', 'solidjs', WINDOW_DAYS.compare),
     runLive: 'grokscope compare react solidjs',
   },
@@ -56,7 +56,7 @@ const DEMOS = [
     command: 'trending',
     query: 'rust, typescript, go',
     days: WINDOW_DAYS.trending,
-    system: TRENDING_SYSTEM,
+    system: trendingSystem(WINDOW_DAYS.trending),
     user: trendingPrompt(['rust', 'typescript', 'go'], WINDOW_DAYS.trending),
     runLive: 'grokscope trending --topics "rust,typescript,go"',
   },

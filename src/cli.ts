@@ -8,25 +8,28 @@ import { Command } from 'commander';
 import {
   askGrok,
   checkApi,
+  parseResponse,
   resolvedModel,
   resolvedBaseUrl,
   FORBIDDEN_HINT,
   GrokApiError,
+  type GrokResult,
   type XSearchConfig,
 } from './grok.js';
 import {
   askSystem,
-  COMPARE_SYSTEM,
-  TRENDING_SYSTEM,
+  compareSystem,
+  trendingSystem,
   comparePrompt,
   trendingPrompt,
   daysAgoISO,
   WINDOW_DAYS,
 } from './prompts.js';
-import { renderResult, renderMarkdownDoc, renderJson } from './formatter.js';
+import { renderResult, renderMarkdownDoc, renderJson, estimateCostUsd } from './formatter.js';
 import { runDemo, DEMO_NAMES, type DemoName } from './demo.js';
+import * as cache from './cache.js';
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 // A new xAI team starts with zero credits and 403s on every call, so getting a
 // key is only half the setup — say so here rather than letting the first call fail.
 const GET_KEY_MSG =
@@ -53,27 +56,70 @@ interface SharedOpts {
   videos?: boolean;
   json?: boolean;
   md?: boolean;
+  fresh?: boolean;
+  maxAge?: string;
 }
 
 function resolveDays(opts: SharedOpts, defaultDays: number): number {
   const days = opts.days ? Number(opts.days) : defaultDays;
-  if (!Number.isFinite(days) || days <= 0 || !Number.isInteger(days)) {
-    console.error(`Invalid --days value: ${opts.days} (expected a positive whole number)`);
+  if (!Number.isFinite(days) || days <= 0 || !Number.isInteger(days) || days > 365) {
+    console.error(`Invalid --days value: ${opts.days} (expected a whole number between 1 and 365)`);
     process.exit(1);
   }
   return days;
 }
 
-function xSearchFromOpts(opts: SharedOpts, days: number): XSearchConfig {
-  const splitList = (s?: string) =>
+/** Split a comma list of handles, trimming whitespace and a leading @. */
+function splitHandles(s?: string): string[] {
+  return (
     s
       ?.split(',')
       .map((h) => h.trim().replace(/^@/, ''))
-      .filter(Boolean);
+      .filter(Boolean) ?? []
+  );
+}
+
+const MAX_HANDLES = 20;
+
+/**
+ * Validate --handles/--exclude before any network setup, with flag-named errors.
+ * xAI caps each list at 20 and forbids combining them; catch both here so the
+ * user sees a clear message before we ever ask for an API key.
+ */
+function validateHandleOpts(opts: SharedOpts): void {
+  const handles = splitHandles(opts.handles);
+  const exclude = splitHandles(opts.exclude);
+  if (handles.length && exclude.length) {
+    console.error("--handles and --exclude can't be combined.");
+    process.exit(1);
+  }
+  if (handles.length > MAX_HANDLES) {
+    console.error(`--handles accepts at most ${MAX_HANDLES} handles (got ${handles.length}).`);
+    process.exit(1);
+  }
+  if (exclude.length > MAX_HANDLES) {
+    console.error(`--exclude accepts at most ${MAX_HANDLES} handles (got ${exclude.length}).`);
+    process.exit(1);
+  }
+}
+
+/** Resolve --max-age (hours) to ms; default 24h. */
+function resolveMaxAgeMs(opts: SharedOpts): number {
+  const hours = opts.maxAge !== undefined ? Number(opts.maxAge) : 24;
+  if (!Number.isFinite(hours) || hours < 0) {
+    console.error(`Invalid --max-age value: ${opts.maxAge} (expected a non-negative number of hours)`);
+    process.exit(1);
+  }
+  return hours * 3_600_000;
+}
+
+function xSearchFromOpts(opts: SharedOpts, days: number): XSearchConfig {
+  const allowed = splitHandles(opts.handles);
+  const excluded = splitHandles(opts.exclude);
   return {
     fromDate: daysAgoISO(days),
-    allowedHandles: splitList(opts.handles),
-    excludedHandles: splitList(opts.exclude),
+    allowedHandles: allowed.length ? allowed : undefined,
+    excludedHandles: excluded.length ? excluded : undefined,
     imageUnderstanding: opts.images,
     videoUnderstanding: opts.videos,
   };
@@ -98,10 +144,33 @@ function startSpinner(label: string): () => void {
   };
 }
 
+/** Dim styling for stderr notes — respects NO_COLOR and non-TTY output. */
+function stderrDim(s: string): string {
+  const on = Boolean(process.stderr.isTTY) && !process.env.NO_COLOR && process.env.TERM !== 'dumb';
+  return on ? `\x1b[2m${s}\x1b[22m` : s;
+}
+
 interface RunMeta {
   command: string;
   query: string;
   days: number;
+}
+
+/** Render a result to stdout in the format the flags select (shared by live/cache/history). */
+function renderOutput(result: GrokResult, opts: SharedOpts, meta: RunMeta, model: string): void {
+  if (opts.json) {
+    process.stdout.write(
+      renderJson(result, {
+        command: meta.command,
+        query: meta.query,
+        model,
+        searchWindowDays: meta.days,
+        version: VERSION,
+      }),
+    );
+    return;
+  }
+  process.stdout.write(opts.md ? renderMarkdownDoc(result) : renderResult(result));
 }
 
 async function run(system: string, user: string, opts: SharedOpts, meta: RunMeta): Promise<void> {
@@ -109,38 +178,52 @@ async function run(system: string, user: string, opts: SharedOpts, meta: RunMeta
     console.error('--json and --md are mutually exclusive — pick one.');
     process.exit(1);
   }
+  // Flag-named validation before we ever ask for a key (findings #4, #9).
+  validateHandleOpts(opts);
   const apiKey = requireApiKey();
   const xSearch = xSearchFromOpts(opts, meta.days);
-  const stop = startSpinner(`Searching X (last ${meta.days} days) via ${resolvedModel()}`);
+  const model = resolvedModel();
+
+  // Cache: an identical request (same model/system/user/window) re-renders for
+  // free. Format-only changes (--json/--md) keep the same key, so they hit too.
+  const key = cache.cacheKey({ model, system, user, xSearch });
+  if (!opts.fresh) {
+    const hit = cache.get(key, resolveMaxAgeMs(opts));
+    if (hit) {
+      renderOutput(parseResponse(hit.response), opts, meta, model);
+      process.stderr.write(`${stderrDim('(from cache — run with --fresh to refresh)')}\n`);
+      return;
+    }
+  }
+
+  const stop = startSpinner(`Searching X (last ${meta.days} days) via ${model}`);
   try {
-    const result = await askGrok({ system, user, xSearch }, apiKey);
+    const { result, raw } = await askGrok({ system, user, xSearch }, apiKey);
     stop();
     if (!result.content.trim()) {
       console.error('The model returned an empty response. Try rephrasing your query.');
       process.exit(1);
     }
-    if (opts.json) {
-      process.stdout.write(
-        renderJson(result, {
-          command: meta.command,
-          query: meta.query,
-          model: resolvedModel(),
-          searchWindowDays: meta.days,
-          version: VERSION,
-        }),
-      );
-      return;
+    cache.put(key, raw, {
+      command: meta.command,
+      query: meta.query,
+      model,
+      days: meta.days,
+      createdAt: new Date().toISOString(),
+    });
+    if (result.incomplete) {
+      console.error('⚠ Response was truncated (likely a token limit) — try a narrower query.');
     }
-    process.stdout.write(opts.md ? renderMarkdownDoc(result) : renderResult(result));
+    renderOutput(result, opts, meta, model);
     // BYOK transparency: estimate what this query cost. Tokens are the API's own
-    // count, but the rates are hardcoded (grok-4.5: $2/M in, $6/M out) — if xAI
-    // repts, this figure drifts silently. console.x.ai billing is the truth.
+    // count; rates come from a per-model table (finding #5) — an unknown GROK_MODEL
+    // omits the dollar figure rather than misreporting it. console.x.ai is the truth.
     const { inputTokens, outputTokens } = result.usage ?? {};
     if (inputTokens !== undefined && outputTokens !== undefined) {
-      const usd = (inputTokens * 2 + outputTokens * 6) / 1_000_000;
-      process.stderr.write(
-        `\x1b[2m${(inputTokens + outputTokens).toLocaleString()} tokens · ~$${usd.toFixed(4)}\x1b[22m\n`,
-      );
+      const usd = estimateCostUsd(model, inputTokens, outputTokens);
+      const total = (inputTokens + outputTokens).toLocaleString();
+      const line = usd !== undefined ? `${total} tokens · ~$${usd.toFixed(4)}` : `${total} tokens`;
+      process.stderr.write(`${stderrDim(line)}\n`);
     }
   } catch (err) {
     stop();
@@ -171,12 +254,16 @@ Examples:
   $ grokscope trending --topics "rust,typescript,go"
   $ grokscope trending --topics "our-sdk" --json > report.json   # CI / scripts
   $ grokscope ask "state of deno" --md >> newsletter.md          # clean markdown
+  $ grokscope ask "state of deno" --fresh                        # bypass the cache
+  $ grokscope history                                            # recent cached results
+  $ grokscope history 1                                          # re-print one for free
   $ grokscope doctor                                             # check your setup
 
 Environment:
   GROK_API_KEY   xAI API key (required; XAI_API_KEY also works)
   GROK_MODEL     override model (default: grok-4.5)
   GROK_BASE_URL  override API base (default: https://api.x.ai/v1)
+  GROKSCOPE_HOME cache directory (default: ~/.grokscope)
   NO_COLOR       disable ANSI styling`,
   );
 
@@ -188,7 +275,9 @@ const withSharedOpts = (cmd: Command): Command =>
     .option('--images', 'let Grok analyze images in posts')
     .option('--videos', 'let Grok analyze videos in posts')
     .option('--json', 'machine-readable JSON output (for CI/scripts)')
-    .option('--md', 'clean markdown output (for newsletters/notes)');
+    .option('--md', 'clean markdown output (for newsletters/notes)')
+    .option('--fresh', 'bypass the cache and fetch fresh (overwrites the cached copy)')
+    .option('--max-age <hours>', 'ignore cached results older than this many hours (default 24)');
 
 withSharedOpts(
   program
@@ -209,7 +298,7 @@ withSharedOpts(
     .argument('<techB>', 'second technology'),
 ).action(async (techA: string, techB: string, opts: SharedOpts) => {
   const days = resolveDays(opts, WINDOW_DAYS.compare);
-  await run(COMPARE_SYSTEM, comparePrompt(techA, techB, days), opts, {
+  await run(compareSystem(days), comparePrompt(techA, techB, days), opts, {
     command: 'compare',
     query: `${techA} vs ${techB}`,
     days,
@@ -231,7 +320,7 @@ withSharedOpts(
     process.exit(1);
   }
   const days = resolveDays(opts, WINDOW_DAYS.trending);
-  await run(TRENDING_SYSTEM, trendingPrompt(topics, days), opts, {
+  await run(trendingSystem(days), trendingPrompt(topics, days), opts, {
     command: 'trending',
     query: topics.join(', '),
     days,
@@ -283,9 +372,11 @@ program
         } else if (health.models.includes(model)) {
           rows.push([true, `model ${model}: available`]);
         } else {
+          // /models can omit models that are still callable, so an absence is a
+          // warning, not a failure — don't fail a working setup on it (finding #8).
           rows.push([
-            false,
-            `model ${model}: not in your account's model list (${health.models.slice(0, 5).join(', ')}…) — check GROK_MODEL`,
+            'warn',
+            `model ${model}: not listed by /models (${health.models.slice(0, 5).join(', ')}…) — /models can omit callable models; check GROK_MODEL if calls fail`,
           ]);
         }
       } else {
@@ -304,6 +395,49 @@ program
         : '\nEverything looks good — try:  grokscope ask "bun vs node in 2026"',
     );
     process.exit(failed ? 1 : 0);
+  });
+
+program
+  .command('history')
+  .description('list recently cached results, or re-print one by index — free, no tokens spent')
+  .argument('[index]', 're-print the cached result at this index (from the list)')
+  .option('--json', 'machine-readable JSON output (for CI/scripts)')
+  .option('--md', 'clean markdown output (for newsletters/notes)')
+  .action((index: string | undefined, opts: { json?: boolean; md?: boolean }) => {
+    if (opts.json && opts.md) {
+      console.error('--json and --md are mutually exclusive — pick one.');
+      process.exit(1);
+    }
+    const entries = cache.list();
+    if (index === undefined) {
+      if (entries.length === 0) {
+        console.log('No cached results yet — run ask/compare/trending to populate the cache.');
+        return;
+      }
+      console.log(`Cached results (${cache.grokscopeHome()}):\n`);
+      entries.forEach((e, i) => {
+        const when = e.meta.createdAt.slice(0, 10);
+        console.log(`  ${String(i + 1).padStart(2)}. ${e.meta.command.padEnd(8)} ${when}  ${e.meta.query}`);
+      });
+      console.log(`\nRe-print one for free:  grokscope history <index>`);
+      return;
+    }
+    const n = Number(index);
+    if (!Number.isInteger(n) || n < 1 || n > entries.length) {
+      console.error(
+        entries.length === 0
+          ? 'No cached results yet — run ask/compare/trending first.'
+          : `No cached result at index ${index}. Run \`grokscope history\` to list them (1–${entries.length}).`,
+      );
+      process.exit(1);
+    }
+    const entry = entries[n - 1]!;
+    renderOutput(
+      parseResponse(entry.response),
+      opts,
+      { command: entry.meta.command, query: entry.meta.query, days: entry.meta.days },
+      entry.meta.model,
+    );
   });
 
 program

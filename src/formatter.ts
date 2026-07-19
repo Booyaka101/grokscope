@@ -31,7 +31,10 @@ function link(url: string, label: string, ansi: boolean): string {
 
 // X/Twitter snowflake IDs encode a millisecond timestamp:
 //   ms = (id >> 22) + 1288834974657
-const X_STATUS_RE = /(?:x|twitter)\.com\/[^/\s]+\/status(?:es)?\/(\d{15,20})/;
+// Anchored to the scheme + host so lookalikes (e.g. fx.com/…/status/…) don't match;
+// an optional subdomain still allows mobile.twitter.com and the like.
+const X_STATUS_RE =
+  /https?:\/\/(?:[\w-]+\.)*(?:x|twitter)\.com\/[^/\s]+\/status(?:es)?\/(\d{15,20})/;
 const X_EPOCH_MS = 1288834974657n;
 
 /** Extract the post date from an x.com/twitter.com status URL, if any. */
@@ -62,6 +65,19 @@ export function recencyTag(date: Date): string {
 
 const INLINE_CITATION_RE = /\[\[(\d+)\]\]\((https?:\/\/[^)\s]+)\)/g;
 const MD_LINK_RE = /\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g;
+
+/**
+ * Rewrite each inline `[[N]](url)` so its number matches the deduped Sources
+ * list (which is numbered by first-appearance). The model's literal N can drift
+ * from that order; the URL is the source of truth, so we renumber by URL.
+ */
+export function renumberInlineCitations(content: string, citations: Citation[]): string {
+  const indexByUrl = new Map(citations.map((c, i) => [c.url, i + 1]));
+  return content.replace(INLINE_CITATION_RE, (match, _n: string, url: string) => {
+    const idx = indexByUrl.get(url);
+    return idx === undefined ? match : `[[${idx}]](${url})`;
+  });
+}
 
 /** Render Grok's markdown-ish output for the terminal. */
 export function renderContent(content: string, ansi = ansiEnabled()): string {
@@ -103,18 +119,40 @@ export function renderCitations(citations: Citation[], ansi = ansiEnabled()): st
 
 /** Full render of a Grok result: body + sources. */
 export function renderResult(result: GrokResult, ansi = ansiEnabled()): string {
-  return `${renderContent(result.content, ansi).trimEnd()}\n${renderCitations(result.citations, ansi)}\n`;
+  const content = renumberInlineCitations(result.content, result.citations);
+  return `${renderContent(content, ansi).trimEnd()}\n${renderCitations(result.citations, ansi)}\n`;
 }
 
 /** --md: clean markdown document (for newsletters, notes, docs). */
 export function renderMarkdownDoc(result: GrokResult): string {
+  const content = renumberInlineCitations(result.content, result.citations);
   const sources = result.citations.map((c, i) => {
     const date = xPostDate(c.url);
     const tag = date ? ` — ${date.toISOString().slice(0, 10)} (${recencyTag(date)})` : '';
     return `${i + 1}. ${c.url}${tag}`;
   });
   const sourcesBlock = sources.length ? `\n\n## Sources\n\n${sources.join('\n')}` : '';
-  return `${result.content.trimEnd()}${sourcesBlock}\n`;
+  return `${content.trimEnd()}${sourcesBlock}\n`;
+}
+
+// Published per-million-token rates ($ in, $ out) keyed by model id. GROK_MODEL
+// is overridable, so an unknown model yields no cost figure rather than a wrong
+// one billed at grok-4.5's rates. console.x.ai billing is always the truth.
+const MODEL_RATES: Record<string, [number, number]> = {
+  'grok-4.5': [2, 6],
+  'grok-4.5-latest': [2, 6],
+};
+
+/** Estimated USD cost, or undefined if we have no published rate for the model. */
+export function estimateCostUsd(
+  model: string,
+  inputTokens?: number,
+  outputTokens?: number,
+): number | undefined {
+  const rate = MODEL_RATES[model];
+  if (!rate || inputTokens === undefined || outputTokens === undefined) return undefined;
+  const [inRate, outRate] = rate;
+  return (inputTokens * inRate + outputTokens * outRate) / 1_000_000;
 }
 
 export interface JsonMeta {
@@ -128,10 +166,9 @@ export interface JsonMeta {
 /** --json: stable machine-readable schema (for CI, scripts, dashboards). */
 export function renderJson(result: GrokResult, meta: JsonMeta): string {
   const { inputTokens, outputTokens, totalTokens } = result.usage ?? {};
-  const estimatedCostUsd =
-    inputTokens !== undefined && outputTokens !== undefined
-      ? Number(((inputTokens * 2 + outputTokens * 6) / 1_000_000).toFixed(6))
-      : undefined;
+  const rawCost = estimateCostUsd(meta.model, inputTokens, outputTokens);
+  const estimatedCostUsd = rawCost === undefined ? undefined : Number(rawCost.toFixed(6));
+  const content = renumberInlineCitations(result.content, result.citations);
   return `${JSON.stringify(
     {
       tool: 'grokscope',
@@ -141,7 +178,7 @@ export function renderJson(result: GrokResult, meta: JsonMeta): string {
       model: meta.model,
       searchWindowDays: meta.searchWindowDays,
       generatedAt: new Date().toISOString(),
-      content: result.content,
+      content,
       citations: result.citations.map((c, i) => {
         const date = xPostDate(c.url);
         return {

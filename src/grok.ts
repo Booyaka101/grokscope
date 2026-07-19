@@ -37,6 +37,14 @@ export interface GrokResult {
   /** Every source URL the agent encountered (top-level `citations` field). */
   allSourceUrls: string[];
   usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+  /** The API set `status: incomplete` (e.g. token limit) — content may be partial. */
+  incomplete: boolean;
+}
+
+/** A live API result plus the raw `/v1/responses` body (for caching / re-render). */
+export interface GrokResponse {
+  result: GrokResult;
+  raw: Record<string, unknown>;
 }
 
 export interface GrokRequest {
@@ -87,7 +95,7 @@ function buildXSearchTool(cfg: XSearchConfig): Record<string, unknown> {
   return tool;
 }
 
-export async function askGrok(req: GrokRequest, apiKey: string): Promise<GrokResult> {
+export async function askGrok(req: GrokRequest, apiKey: string): Promise<GrokResponse> {
   const baseUrl = resolvedBaseUrl();
   const model = resolvedModel();
 
@@ -124,7 +132,10 @@ export async function askGrok(req: GrokRequest, apiKey: string): Promise<GrokRes
     }
 
     if (RETRYABLE_STATUS.has(res.status) && attempt < MAX_ATTEMPTS) {
-      const retryAfter = Number(res.headers.get('retry-after'));
+      // A missing Retry-After must fall through to the backoff — Number(null) is
+      // 0 (finite), which would zero out the wait and defeat the retry spacing.
+      const raw = res.headers.get('retry-after');
+      const retryAfter = raw == null ? NaN : Number(raw);
       const waitMs = Number.isFinite(retryAfter)
         ? Math.min(retryAfter * 1000, 30_000)
         : attempt * 1500;
@@ -167,14 +178,21 @@ export async function askGrok(req: GrokRequest, apiKey: string): Promise<GrokRes
     throw new GrokApiError(`xAI API error ${res.status}${detail}`, res.status);
   }
 
-  const data = (await res.json()) as Record<string, unknown>;
+  let data: Record<string, unknown>;
+  try {
+    data = (await res.json()) as Record<string, unknown>;
+  } catch {
+    throw new GrokApiError('The xAI API returned an unreadable (non-JSON) response.');
+  }
   const result = parseResponse(data);
-  if (!result.content.trim() && data.status === 'incomplete') {
+  // Empty + incomplete is a hard failure; partial-but-non-empty content is
+  // returned with `incomplete: true` so the caller can warn instead of discarding it.
+  if (!result.content.trim() && result.incomplete) {
     throw new GrokApiError(
       'The model returned an incomplete response (likely hit a token limit). Try a narrower question.',
     );
   }
-  return result;
+  return { result, raw: data };
 }
 
 export interface ApiHealth {
@@ -316,5 +334,11 @@ export function parseResponse(data: Record<string, unknown>): GrokResult {
     totalTokens: typeof usageRaw.total_tokens === 'number' ? usageRaw.total_tokens : undefined,
   };
 
-  return { content, citations: [...byUrl.values()], allSourceUrls, usage };
+  return {
+    content,
+    citations: [...byUrl.values()],
+    allSourceUrls,
+    usage,
+    incomplete: data.status === 'incomplete',
+  };
 }

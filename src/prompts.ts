@@ -1,24 +1,58 @@
 /** System prompts + search windows for each GrokScope command mode.
  *
  * Prompts are parameterized by the search window so `--days N` keeps the
- * instructions and the x_search from_date in agreement.
+ * instructions and the x_search from_date in agreement. Every system prompt is
+ * anchored to today's date (computed at call time) and the exact search window,
+ * so the model never reasons against a stale idea of "now".
  */
 
-export function askSystem(days: number): string {
-  const window = days === 30 ? 'the last 30 days' : `the last ${days} days`;
-  return `You are a developer research assistant. Use X search to find what developers are actually saying about this question in ${window}. Cite at least 3 real X posts. End with a clear Community Verdict paragraph.`;
+/** Today's date as ISO (YYYY-MM-DD), computed at call time. */
+export function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
-export const COMPARE_SYSTEM =
-  'You are a developer research assistant doing head-to-head technology comparisons from live community signal on X. Always cite the actual posts you draw from.';
+/** Anchor the model to the real calendar window (today + the exact date range). */
+function windowContext(days: number): string {
+  const today = todayISO();
+  return `Today is ${today}. Only use X posts from ${daysAgoISO(days)} to ${today} (the last ${days} days).`;
+}
+
+// Every renderer only links inline citations shaped [[N]](url), so every prompt
+// must ask for exactly that shape — and must never pad the count with invented posts.
+const CITE_RULE =
+  'Cite inline using exactly this markdown: `[[1]](https://x.com/...)`, numbered from 1 in order of first appearance. ' +
+  'If you find fewer than 3 relevant posts, say so explicitly; never invent sources.';
+
+export function askSystem(days: number): string {
+  return (
+    `You are a developer research assistant. ${windowContext(days)} ` +
+    `Use X search to find what developers are actually saying about this question. Cite at least 3 real X posts. ` +
+    `${CITE_RULE} ` +
+    `If the community is genuinely divided, say so — don't force a verdict/winner. ` +
+    `End with a clear Community Verdict paragraph.`
+  );
+}
+
+export function compareSystem(days: number): string {
+  return (
+    `You are a developer research assistant doing head-to-head technology comparisons from live community signal on X. ` +
+    `${windowContext(days)} Always cite the actual posts you draw from. ${CITE_RULE} ` +
+    `If the community is genuinely divided, say so — don't force a winner.`
+  );
+}
 
 export function comparePrompt(techA: string, techB: string, days: number): string {
   const window = days === 7 ? 'this week' : `in the last ${days} days`;
   return `Compare ${techA} vs ${techB} based on what the developer community is saying on X ${window}. Show pros/cons from actual posts for each. Cite sources. Give a winner with caveats.`;
 }
 
-export const TRENDING_SYSTEM =
-  'You are a developer trend analyst working from live X posts. Ground every claim in real posts and cite them.';
+export function trendingSystem(days: number): string {
+  return (
+    `You are a developer trend analyst working from live X posts. ${windowContext(days)} ` +
+    `Ground every claim in real posts and cite them. ${CITE_RULE} ` +
+    `Base momentum on observable signal (post volume/engagement); if unclear, say 'unclear'.`
+  );
+}
 
 export function trendingPrompt(topics: string[], days: number): string {
   const window = days === 7 ? 'this week' : `over the last ${days} days`;

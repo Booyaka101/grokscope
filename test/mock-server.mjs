@@ -87,6 +87,23 @@ function answerFor(userContent) {
   };
 }
 
+/**
+ * An answer whose inline citation numbers are out of order relative to first
+ * appearance: the model emits [[3]] first, then [[1]], then [[2]]. The client
+ * must renumber by URL so the rendered inline numbers match the Sources list.
+ */
+function outOfOrderAnswer() {
+  const u = [xUrl('firstsource', 2), xUrl('secondsource', 4), xUrl('thirdsource', 6)];
+  return {
+    text:
+      `## Ordering check\n\n` +
+      `The first cited point references a later-numbered source [[3]](${u[0]}). ` +
+      `The second point cites the model's "1" [[1]](${u[1]}). ` +
+      `The third wraps up [[2]](${u[2]}).`,
+    urls: u,
+  };
+}
+
 function buildAnnotations(text) {
   const annotations = [];
   const re = /\[\[(\d+)\]\]\((https?:\/\/[^)\s]+)\)/g;
@@ -151,12 +168,24 @@ export function createMockServer(opts = {}) {
       res.end(JSON.stringify({ error: { message: 'missing or invalid bearer token' } }));
       return;
     }
-    // opts.failFirst: make the first N POSTs return 429 (exercises client retry)
+    // opts.respondStatus: always answer POSTs with this HTTP status (e.g. 402 out of credits)
+    if (opts.respondStatus) {
+      requests.push({ status: opts.respondStatus });
+      res.writeHead(opts.respondStatus, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: { message: opts.errorMessage ?? `mock ${opts.respondStatus}` } }));
+      return;
+    }
+    // opts.failFirst: make the first N POSTs fail (exercises client retry).
+    //   failFirstStatus     — status to use (default 429)
+    //   failFirstNoRetryAfter — omit the Retry-After header (backoff must still run)
     postCount += 1;
     if (opts.failFirst && postCount <= opts.failFirst) {
-      requests.push({ rateLimited: true });
-      res.writeHead(429, { 'content-type': 'application/json', 'retry-after': '0' });
-      res.end(JSON.stringify({ error: { message: 'rate limited (mock)' } }));
+      const status = opts.failFirstStatus ?? 429;
+      requests.push({ rateLimited: true, status });
+      const headers = { 'content-type': 'application/json' };
+      if (!opts.failFirstNoRetryAfter) headers['retry-after'] = '0';
+      res.writeHead(status, headers);
+      res.end(JSON.stringify({ error: { message: 'transient failure (mock)' } }));
       return;
     }
     let raw = '';
@@ -170,11 +199,18 @@ export function createMockServer(opts = {}) {
         res.end(JSON.stringify({ error: { message: `schema violations: ${errors.join('; ')}` } }));
         return;
       }
-      const { text, urls } = answerFor(body.input[0].content);
+      // opts.respondNonJson: a 200 whose body is not JSON — client must fail friendly.
+      if (opts.respondNonJson) {
+        res.writeHead(200, { 'content-type': 'text/html' });
+        res.end('<!doctype html><html><body>upstream proxy error, not JSON</body></html>');
+        return;
+      }
+      const { text, urls } = opts.outOfOrderCitations ? outOfOrderAnswer() : answerFor(body.input[0].content);
       const payload = {
         id: 'resp_mock_001',
         object: 'response',
-        status: 'completed',
+        // opts.respondIncomplete: partial content flagged incomplete (token-limit case).
+        status: opts.respondIncomplete ? 'incomplete' : 'completed',
         created_at: Math.floor(Date.now() / 1000),
         model: body.model,
         output: [

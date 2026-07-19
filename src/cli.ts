@@ -24,8 +24,9 @@ import {
   WINDOW_DAYS,
 } from './prompts.js';
 import { renderResult, renderMarkdownDoc, renderJson } from './formatter.js';
+import { runDemo, DEMO_NAMES, type DemoName } from './demo.js';
 
-const VERSION = '1.0.2';
+const VERSION = '1.1.0';
 // A new xAI team starts with zero credits and 403s on every call, so getting a
 // key is only half the setup — say so here rather than letting the first call fail.
 const GET_KEY_MSG =
@@ -303,6 +304,36 @@ program
         : '\nEverything looks good — try:  grokscope ask "bun vs node in 2026"',
     );
     process.exit(failed ? 1 : 0);
+  });
+
+program
+  .command('demo')
+  .description('replay a recorded real query — see the output with no API key or credits')
+  .argument('[which]', `which sample: ${DEMO_NAMES.join(' | ')}`, 'ask')
+  .option('--all', 'run all three samples in sequence')
+  .option('--json', 'machine-readable JSON output (for CI/scripts)')
+  .option('--md', 'clean markdown output (for newsletters/notes)')
+  .action((which: string, opts: { all?: boolean; json?: boolean; md?: boolean }) => {
+    if (opts.json && opts.md) {
+      console.error('--json and --md are mutually exclusive — pick one.');
+      process.exit(1);
+    }
+    const names = opts.all ? [...DEMO_NAMES] : [which];
+    for (const n of names) {
+      if (!DEMO_NAMES.includes(n as DemoName)) {
+        console.error(`Unknown demo "${n}". Choose one of: ${DEMO_NAMES.join(', ')} (or --all).`);
+        process.exit(1);
+      }
+    }
+    try {
+      for (const n of names) runDemo(n as DemoName, opts, VERSION);
+    } catch (err) {
+      console.error(
+        `Could not load the demo sample: ${err instanceof Error ? err.message : String(err)}\n` +
+          'Record fresh samples with:  npm run demo:record',
+      );
+      process.exit(1);
+    }
   });
 
 program.parseAsync(process.argv);

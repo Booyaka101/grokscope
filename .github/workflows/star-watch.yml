@@ -1,0 +1,86 @@
+name: star-watch
+
+# Pings Telegram when someone stars the repo, or opens an issue/PR.
+# Runs on GitHub's infra, so it survives the laptop sleeping.
+#
+# Stars come from the API (no auth games, no scraping). The last-seen count is
+# kept in the Actions cache — Actions is stateless, so without it every run would
+# think every star is new.
+
+on:
+  schedule:
+    - cron: '23 * * * *'   # hourly at :23 — off the :00 stampede
+  workflow_dispatch:        # so it can be triggered by hand to test
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore last seen count
+        id: cache
+        uses: actions/cache/restore@v4
+        with:
+          path: state
+          # Saved as star-watch-state-<run_id>, so the exact key never hits;
+          # restore-keys prefix-matches and picks the most recent run's state.
+          key: star-watch-state
+          restore-keys: |
+            star-watch-state-
+
+      - name: Check stars and notify on change
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p state
+
+          api() { curl -sS --max-time 20 -H "Accept: application/vnd.github+json" "$1"; }
+          repo_json=$(api "https://api.github.com/repos/Booyaka101/grokscope")
+          stars=$(echo "$repo_json" | jq -r '.stargazers_count')
+          forks=$(echo "$repo_json" | jq -r '.forks_count')
+          issues=$(echo "$repo_json" | jq -r '.open_issues_count')
+
+          # No previous state = first run. Record silently; do not ping with a
+          # fake "0 -> 3" that is really just the baseline.
+          if [ -f state/stars ]; then
+            prev=$(cat state/stars)
+            prev_i=$(cat state/issues 2>/dev/null || echo 0)
+          else
+            prev=""; prev_i=""
+          fi
+
+          echo "$stars" > state/stars
+          echo "$issues" > state/issues
+          echo "stars=$stars prev=${prev:-none} issues=$issues"
+
+          send() {
+            curl -sS --max-time 20 -X POST \
+              "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT}" \
+              --data-urlencode "text=$1" \
+              -d disable_web_page_preview=true >/dev/null
+          }
+
+          if [ -z "$prev" ]; then
+            send "⭐ GrokScope star-watch armed. Baseline: ${stars} stars, ${forks} forks, ${issues} open issues. You'll get a ping when this moves."
+          else
+            if [ "$stars" -gt "$prev" ]; then
+              send "⭐ GrokScope: ${prev} → ${stars} stars (+$((stars - prev)))
+https://github.com/Booyaka101/grokscope/stargazers"
+            fi
+            if [ -n "$prev_i" ] && [ "$issues" -gt "$prev_i" ]; then
+              send "💬 GrokScope: new issue/PR (${prev_i} → ${issues} open)
+https://github.com/Booyaka101/grokscope/issues"
+            fi
+          fi
+
+      - name: Save count
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state
+          key: star-watch-state-${{ github.run_id }}

@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "command": "compare",
+    "query": "react vs solidjs",
+    "days": 7,
+    "recordedAt": "2026-07-19",
+    "model": "grok-4.5",
+    "runLive": "grokscope compare react solidjs",
+    "sample": true
+  },
+  "response": {
+    "id": "resp_mock_001",
+    "object": "response",
+    "status": "completed",
+    "created_at": 1784441533,
+    "model": "grok-4.5",
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "## react vs solidjs: what X is saying this week\n\n**react — pros:** mature ecosystem and hiring pool; one senior dev noted migration costs stay predictable [[1]](https://x.com/devopsreact/status/2077999798044065792). **Cons:** several threads complain about re-render overhead in large tables [[2]](https://x.com/frontendfocus/status/2077637410178465792).\n\n**solidjs — pros:** benchmark thread showing 2-4x faster updates on identical workloads got wide agreement [[3]](https://x.com/jsperfnerd/status/2076912634447265792). **Cons:** smaller ecosystem; devs report hunting for maintained component libraries [[4]](https://x.com/uiengineer/status/2078362185909665792).\n\n**Winner:** solidjs on raw performance sentiment this week, with the caveat that react still wins on ecosystem depth and team ramp-up speed.",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://x.com/devopsreact/status/2077999798044065792",
+                "start_index": 155,
+                "end_index": 214,
+                "title": "1"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/frontendfocus/status/2077637410178465792",
+                "start_index": 292,
+                "end_index": 353,
+                "title": "2"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/jsperfnerd/status/2076912634447265792",
+                "start_index": 463,
+                "end_index": 521,
+                "title": "3"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/uiengineer/status/2078362185909665792",
+                "start_index": 607,
+                "end_index": 665,
+                "title": "4"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "citations": [
+      "https://x.com/devopsreact/status/2077999798044065792",
+      "https://x.com/frontendfocus/status/2077637410178465792",
+      "https://x.com/jsperfnerd/status/2076912634447265792",
+      "https://x.com/uiengineer/status/2078362185909665792"
+    ],
+    "usage": {
+      "input_tokens": 1180,
+      "output_tokens": 420,
+      "total_tokens": 1600,
+      "num_sources_used": 4
+    }
+  }
+}

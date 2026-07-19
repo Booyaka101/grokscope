@@ -1,0 +1,251 @@
+{
+  "meta": {
+    "command": "ask",
+    "query": "bun vs node in 2026",
+    "days": 30,
+    "recordedAt": "2026-07-19",
+    "model": "grok-4.5",
+    "runLive": "grokscope ask \"bun vs node in 2026\""
+  },
+  "response": {
+    "created_at": 1784442531,
+    "completed_at": 1784442531,
+    "id": "4703ca40-206f-991e-a7d6-b545ffbf4848",
+    "max_output_tokens": null,
+    "model": "grok-4.5",
+    "object": "response",
+    "output": [
+      {
+        "id": "rs_4703ca40-206f-991e-a7d6-b545ffbf4848",
+        "summary": [
+          {
+            "text": "The question is \"bun vs node in 2026\". I need to find what developers are saying on X (Twitter) about Bun vs Node.js in the last 30 days. I must cite at least 3 real X posts and end with a clear Commu...",
+            "type": "summary_text"
+          }
+        ],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-0",
+        "input": "{\"query\":\"Bun vs Node.js in 2025 or 2026 comparison performance\",\"limit\":\"10\",\"from_date\":\"2024-09-01\"}",
+        "name": "x_semantic_search",
+        "type": "custom_tool_call",
+        "id": "ctc_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-0",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-1",
+        "input": "{\"query\":\"bun vs node OR \\\"bun vs node\\\" OR \\\"node vs bun\\\" since:2024-09-01\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-1",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-2",
+        "input": "{\"query\":\"(bun OR \\\"bun.sh\\\") (node OR nodejs) (faster OR better OR replace OR vs OR versus) since:2024-09-20\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-2",
+        "status": "completed"
+      },
+      {
+        "id": "tco_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-0",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-1",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-2",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-3",
+        "input": "{\"query\":\"(\\\"bun vs node\\\" OR \\\"node vs bun\\\" OR \\\"bun over node\\\" OR \\\"switching to bun\\\" OR \\\"bun instead of node\\\") since:2026-06-01\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-3",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-4",
+        "input": "{\"query\":\"Should I use Bun or Node.js in 2026? Experiences and comparisons\",\"limit\":\"10\",\"from_date\":\"2026-06-01\"}",
+        "name": "x_semantic_search",
+        "type": "custom_tool_call",
+        "id": "ctc_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-4",
+        "status": "completed"
+      },
+      {
+        "call_id": "xs_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-5",
+        "input": "{\"query\":\"bun (faster OR slower OR better OR worse OR compatible OR unstable) (node OR nodejs) since:2026-07-01\",\"limit\":\"10\",\"mode\":\"Latest\"}",
+        "name": "x_keyword_search",
+        "type": "custom_tool_call",
+        "id": "ctc_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-5",
+        "status": "completed"
+      },
+      {
+        "id": "tco_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-3",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-4",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "id": "tco_4703ca40-206f-991e-a7d6-b545ffbf4848_call-e14b041f-1312-4dc0-9908-0adb56bd5fdd-5",
+        "summary": [],
+        "type": "reasoning",
+        "status": "completed"
+      },
+      {
+        "content": [
+          {
+            "type": "output_text",
+            "text": "**Bun vs Node in mid-2026** remains a hot (if slightly less frenzied) developer debate on X. Bun continues to win on raw speed, startup time, DX, and all-in-one tooling, while Node holds the crown for stability, ecosystem maturity, native addons, and “it just works in production.” The big 2026 plot twist is Bun’s high-profile (and AI-assisted) rewrite from Zig to Rust, which many see as a bid for long-term durability and faster feature shipping.[[1]](https://x.com/devDidYouKnow/status/2077595703606694096)\n\n### What developers are actually saying (last ~30 days)\n\n**Speed & resource wins for Bun are still real for many:**\n- Developers report concrete production gains. One engineer noted: “Moving from Node to Bun was a game changer for me, it cut process usage across all my services by over 20%. And now there's news we can do even better. Incredible!”[[2]](https://x.com/bartdominiak/status/2076939953653621055)\n- Compatibility + modernity is a common pitch: “Bun js is 100% compatible with Node js, but it's modern, clean and much faster. Use it with Hono instead of Express.”[[3]](https://x.com/10XGeorgeToma/status/2078607514053070881)\n- Benchmarks still surface (e.g., claims of 3x faster boot and 1.8x throughput on concurrent SQLite workloads).\n\n**Skepticism and “not ready to fully replace” voices are loud:**\n- Stability and “vibe-coded” concerns persist: “devs want to use bun but as of now it's being unstable or ‘vide coded’.”[[4]](https://x.com/vgsevenn/status/2078358867734626384)\n- Some old folklore is being challenged. One re-benchmark post claimed: “I re-ran Bun vs Deno vs Node on one box and the folklore collapsed. Deno now beats Bun on raw throughput, 133k vs 122k req/s. … Which do you reach for?”\n- Ex-Bun/Node core voices point out that AI changes the calculus: “Bun has faster http methods? An AI agent can create a .node addon to out perf Bun trivially. No need to switch runtimes.”[[5]](https://x.com/jdalton/status/2077411139361644675)\n- Niche regressions appear too (e.g., Metro bundler running noticeably slower under Bun than Node).\n\n**Broader framing:**\n- Node is still treated as the safe baseline. One take: “Node.js is the baseline. Deno was second to market, and Bun was third. Bun has gone VC route (hype über alles, must raise, and vibe coding). Deno seems like a nice middle ground.”[[6]](https://x.com/eduardo_lavaque/status/2076556988213837880)\n- The Rust rewrite (done extremely quickly with swarms of AI agents) is viewed as Bun trying to professionalize and ship features faster than Node long-term, trading some of its original “snappier, simpler” radical edge for ecosystem durability.[[7]](https://x.com/glitchtruth/status/2077255611608383967)\n- Package-manager wars continue on the side (Nub claiming big wins over Bun’s installer).\n\nArticles with titles like “Bun vs Node.js in 2026: which backend runtime should your team choose?” are circulating, showing the question is still actively discussed for team decisions.[[8]](https://x.com/eCorpIT/status/2076169165266989404)\n\n### Community Verdict\nIn mid-2026 the practical consensus on X is pragmatic dual-runtime: **use Bun for new greenfield projects, CLIs, scripts, local dev, edge/serverless, and performance-sensitive services** where its speed, built-in bundler/test runner/package manager, and TypeScript-first DX shine—and where you’re okay riding the bleeding edge (or the post-Rust-rewrite stabilization). **Stick with (or default to) Node for large existing codebases, heavy native-addon needs, maximum ecosystem certainty, enterprise compliance, and anything that must be boringly reliable.** Many teams run both; AI tooling has lowered the cost of staying on Node or polyfilling gaps. Bun has not “killed” Node, but it has permanently raised the bar and forced Node (and Deno) to keep improving. The winner is whichever fits your constraints today—most developers no longer treat it as a religious war.",
+            "logprobs": [],
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://x.com/devDidYouKnow/status/2077595703606694096",
+                "start_index": 449,
+                "end_index": 510,
+                "title": "1"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/bartdominiak/status/2076939953653621055",
+                "start_index": 860,
+                "end_index": 920,
+                "title": "2"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/10XGeorgeToma/status/2078607514053070881",
+                "start_index": 1086,
+                "end_index": 1147,
+                "title": "3"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/vgsevenn/status/2078358867734626384",
+                "start_index": 1446,
+                "end_index": 1502,
+                "title": "4"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/jdalton/status/2077411139361644675",
+                "start_index": 1917,
+                "end_index": 1972,
+                "title": "5"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/eduardo_lavaque/status/2076556988213837880",
+                "start_index": 2331,
+                "end_index": 2394,
+                "title": "6"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/glitchtruth/status/2077255611608383967",
+                "start_index": 2640,
+                "end_index": 2699,
+                "title": "7"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/eCorpIT/status/2076169165266989404",
+                "start_index": 2975,
+                "end_index": 3030,
+                "title": "8"
+              }
+            ]
+          }
+        ],
+        "id": "msg_4703ca40-206f-991e-a7d6-b545ffbf4848",
+        "role": "assistant",
+        "type": "message",
+        "status": "completed"
+      }
+    ],
+    "parallel_tool_calls": true,
+    "previous_response_id": null,
+    "reasoning": {
+      "effort": "high",
+      "summary": "detailed"
+    },
+    "temperature": 0.7,
+    "text": {
+      "format": {
+        "type": "text"
+      }
+    },
+    "tool_choice": "auto",
+    "tools": [
+      {
+        "type": "x_search",
+        "from_date": "2026-06-19"
+      }
+    ],
+    "top_p": 0.95,
+    "usage": {
+      "input_tokens": 29320,
+      "input_tokens_details": {
+        "cached_tokens": 11776
+      },
+      "output_tokens": 2280,
+      "output_tokens_details": {
+        "reasoning_tokens": 1368
+      },
+      "total_tokens": 31600,
+      "num_sources_used": 0,
+      "num_server_side_tools_used": 6,
+      "cost_in_usd_ticks": 823008000,
+      "server_side_tool_usage_details": {
+        "web_search_calls": 0,
+        "x_search_calls": 6,
+        "code_interpreter_calls": 0,
+        "file_search_calls": 0,
+        "mcp_calls": 0,
+        "document_search_calls": 0,
+        "image_generation_calls": 0
+      },
+      "context_details": {
+        "input_tokens": 17588,
+        "output_tokens": 1295
+      }
+    },
+    "user": null,
+    "incomplete_details": null,
+    "status": "completed",
+    "store": true,
+    "metadata": {
+      "system_fingerprint": "fp_a39489019fa99b6e"
+    },
+    "background": false,
+    "service_tier": "default",
+    "truncation": "disabled",
+    "top_logprobs": 0,
+    "presence_penalty": 0,
+    "frequency_penalty": 0,
+    "prompt_cache_key": null,
+    "max_tool_calls": null,
+    "safety_identifier": null,
+    "error": null,
+    "instructions": "You are a developer research assistant. Use X search to find what developers are actually saying about this question in the last 30 days. Cite at least 3 real X posts. End with a clear Community Verdict paragraph."
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "command": "trending",
+    "query": "rust, typescript, go",
+    "days": 7,
+    "recordedAt": "2026-07-19",
+    "model": "grok-4.5",
+    "runLive": "grokscope trending --topics \"rust,typescript,go\"",
+    "sample": true
+  },
+  "response": {
+    "id": "resp_mock_001",
+    "object": "response",
+    "status": "completed",
+    "created_at": 1784441533,
+    "model": "grok-4.5",
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "## Weekly buzz report\n\n**rust** — sentiment: positive. Top concern: compile times keeps coming up [[1]](https://x.com/rustdev/status/2078362185922248704). Momentum: rising.\n\n**typescript** — sentiment: mixed. Top concern: tooling churn keeps coming up [[2]](https://x.com/typescriptdev/status/2077999798056648704). Momentum: stable.\n\n**go** — sentiment: positive. Top concern: generics ergonomics keeps coming up [[3]](https://x.com/godev/status/2077637410191048704). Momentum: rising.",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://x.com/rustdev/status/2078362185922248704",
+                "start_index": 98,
+                "end_index": 153,
+                "title": "1"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/typescriptdev/status/2077999798056648704",
+                "start_index": 252,
+                "end_index": 313,
+                "title": "2"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/godev/status/2077637410191048704",
+                "start_index": 413,
+                "end_index": 466,
+                "title": "3"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "citations": [
+      "https://x.com/rustdev/status/2078362185922248704",
+      "https://x.com/typescriptdev/status/2077999798056648704",
+      "https://x.com/godev/status/2077637410191048704"
+    ],
+    "usage": {
+      "input_tokens": 1180,
+      "output_tokens": 420,
+      "total_tokens": 1600,
+      "num_sources_used": 3
+    }
+  }
+}

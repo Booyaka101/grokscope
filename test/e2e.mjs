@@ -182,6 +182,47 @@ await mock.close();
   await flaky.close();
 }
 
+// 12. demo mode — replays recorded samples with NO API key or network
+{
+  const fixtures = path.join(root, 'test', 'fixtures');
+  const demoEnv = { GROKSCOPE_DEMO_DIR: fixtures };
+
+  const dr = await runCli(['demo'], demoEnv);
+  check('demo -> runs with no API key, exit 0', dr.code === 0, dr.stderr.slice(0, 200));
+  check(
+    'demo -> renders cited content + Sources',
+    /https:\/\/x\.com\/\w+\/status\/\d+/.test(dr.stdout) && /SOURCES|Sources/.test(dr.stdout),
+    dr.stdout.slice(-300),
+  );
+  check(
+    'demo -> banner marks it a recorded sample (stderr)',
+    /recorded sample/i.test(dr.stderr) && /no API key/i.test(dr.stderr),
+    dr.stderr.slice(0, 200),
+  );
+
+  const dj = await runCli(['demo', 'ask', '--json'], demoEnv);
+  let parsed = null;
+  try { parsed = JSON.parse(dj.stdout); } catch {}
+  check(
+    'demo --json -> valid JSON with content',
+    dj.code === 0 && parsed && typeof parsed.content === 'string' && parsed.command === 'ask',
+    dj.stdout.slice(0, 150),
+  );
+
+  const dc = await runCli(['demo', 'compare'], demoEnv);
+  check('demo compare -> exit 0 with cited sources', dc.code === 0 && /https:\/\/x\.com\//.test(dc.stdout), dc.stderr.slice(0, 200));
+
+  const dall = await runCli(['demo', '--all'], demoEnv);
+  check(
+    'demo --all -> renders all three samples',
+    dall.code === 0 && (dall.stderr.match(/recorded sample/gi) ?? []).length === 3,
+    String((dall.stderr.match(/recorded sample/gi) ?? []).length),
+  );
+
+  const dbad = await runCli(['demo', 'nonsense'], demoEnv);
+  check('demo unknown -> exit 1 with guidance', dbad.code === 1 && /Unknown demo/.test(dbad.stderr), dbad.stderr.slice(0, 150));
+}
+
 const failed = results.filter((r) => !r.pass).length;
 console.log(`\n${results.length - failed}/${results.length} checks passed`);
 process.exit(failed ? 1 : 0);

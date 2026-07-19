@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "command": "ask",
+    "query": "bun vs node in 2026",
+    "days": 30,
+    "recordedAt": "2026-07-19",
+    "model": "grok-4.5",
+    "runLive": "grokscope ask \"bun vs node in 2026\"",
+    "sample": true
+  },
+  "response": {
+    "id": "resp_mock_001",
+    "object": "response",
+    "status": "completed",
+    "created_at": 1784441533,
+    "model": "grok-4.5",
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "## What developers are saying\n\nBun's 1.3 release thread drew heavy praise for install speed and built-in bundling [[1]](https://x.com/bunjsdev/status/2077275022283505664). Node maintainers pushed back with 22.x perf numbers closing the gap [[2]](https://x.com/nodesource/status/2075463082955505664). Several production users report sticking with Node for ecosystem stability while using Bun for scripts and CI [[3]](https://x.com/backendweekly/status/2073288755761905664), and a widely-shared migration postmortem called the switch \"worth it for greenfield only\" [[4]](https://x.com/sveltekitfan/status/2071114428568305664).\n\n**Community Verdict:** the community leans Node for production workloads in 2026, with Bun the clear favorite for local tooling and new small services — adoption is rising but bounded by ecosystem compatibility concerns.",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://x.com/bunjsdev/status/2077275022283505664",
+                "start_index": 114,
+                "end_index": 170,
+                "title": "1"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/nodesource/status/2075463082955505664",
+                "start_index": 240,
+                "end_index": 298,
+                "title": "2"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/backendweekly/status/2073288755761905664",
+                "start_index": 410,
+                "end_index": 471,
+                "title": "3"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://x.com/sveltekitfan/status/2071114428568305664",
+                "start_index": 563,
+                "end_index": 623,
+                "title": "4"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "citations": [
+      "https://x.com/bunjsdev/status/2077275022283505664",
+      "https://x.com/nodesource/status/2075463082955505664",
+      "https://x.com/backendweekly/status/2073288755761905664",
+      "https://x.com/sveltekitfan/status/2071114428568305664"
+    ],
+    "usage": {
+      "input_tokens": 1180,
+      "output_tokens": 420,
+      "total_tokens": 1600,
+      "num_sources_used": 4
+    }
+  }
+}

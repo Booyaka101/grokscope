@@ -26,6 +26,17 @@ Sources
   3. https://x.com/.../status/20721351... (15d ago)
 ```
 
+## Try it first — no key, no credits
+
+See exactly what GrokScope produces before you sign up for anything:
+
+```bash
+npx grokscope demo          # replays a real recorded `ask "bun vs node in 2026"`
+npx grokscope demo --all    # ask + compare + trending
+```
+
+`demo` replays a **real recorded run** through the same renderer as a live query — clickable citations, recency tags, the lot — with no API key, no credits, and no network. When the output looks useful, set a key (below) and run it live.
+
 ## Setup (2 minutes)
 
 1. **Get an API key** at [console.x.ai](https://console.x.ai), then **add credits to your team** — a brand-new team starts with none, and every call returns `403` until you do. (Grok 4.5 is $2/M input, $6/M output tokens. Budget **~$0.15–$0.30 per query** — `x_search` pulls dozens of real posts into context, so a run measures 70k–140k tokens. GrokScope prints the cost after every run.) If anything is off, `grokscope doctor` tells you which of these it is, for free.
@@ -52,6 +63,7 @@ Sources
 | `grokscope compare <techA> <techB>` | Head-to-head community sentiment with pros/cons per side, cited, plus a winner with caveats | this week |
 | `grokscope trending --topics "rust,typescript,go"` | Per-topic buzz report: sentiment, top concern, momentum (rising/falling/stable) | this week |
 | `grokscope doctor` | 10-second setup check: key present, API reachable, key valid, model available — free, spends no tokens | — |
+| `grokscope demo [which]` | Replay a recorded real run (`ask` / `compare` / `trending`, or `--all`) — **no API key or credits**. Honours `--json` / `--md` | — |
 
 **Options (all search commands):**
 

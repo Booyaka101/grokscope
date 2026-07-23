@@ -3,13 +3,15 @@ name: star-watch
 # Pings Telegram when someone stars the repo, or opens an issue/PR.
 # Runs on GitHub's infra, so it survives the laptop sleeping.
 #
-# State (last-seen counts) lives in a repository Actions VARIABLE, not the
-# Actions cache. The cache was the root of the hourly-spam saga: restores
-# failed with "GetCacheEntryDownloadURL ... workflow run not found" (a cache
-# service flake) even when the entry existed, every miss looked like a first
-# run, and the old first-run branch sent a Telegram ping — hourly. Cache
-# entries also expire after 7 days unused, so even a healthy cache would
-# re-baseline weekly. A variable has no expiry and no download-URL dance.
+# State (last-seen counts) lives in state.json on the meta/star-watch-state
+# branch, read/written via the contents API. Everything else failed in
+# practice: the Actions cache never restored for this workflow's runs
+# ("GetCacheEntryDownloadURL ... workflow run not found", a cache service
+# flake) and expires after 7 days unused anyway; repo Actions variables
+# reject GITHUB_TOKEN writes ("Resource not accessible by integration").
+# Every state miss looked like a first run, and the old first-run branch
+# sent a Telegram ping — hourly. The state file is committed only when the
+# counts actually change, so the meta branch stays quiet too.
 # Quiet rules, in order of importance:
 #   - a run with no previous state records the baseline SILENTLY — no message
 #   - API values are validated as numbers BEFORE state is touched, so a rate
@@ -22,8 +24,7 @@ on:
   workflow_dispatch:        # so it can be triggered by hand to test
 
 permissions:
-  contents: read
-  actions: write            # read/write the STAR_WATCH_STATE repo variable
+  contents: write           # read/write state.json on meta/star-watch-state
 
 jobs:
   check:
@@ -54,10 +55,11 @@ jobs:
             exit 1
           fi
 
-          # Previous state: "<stars> <issues>" in a repo Actions variable.
+          # Previous state: "<stars> <issues>" in state.json on the meta branch.
+          STATE_BRANCH="meta/star-watch-state"
           prev=""; prev_i=""
-          state=$(gh api "repos/${GITHUB_REPOSITORY}/actions/variables/STAR_WATCH_STATE" \
-                    --jq .value 2>/dev/null || echo '')
+          state=$(gh api "repos/${GITHUB_REPOSITORY}/contents/state.json?ref=${STATE_BRANCH}" \
+                    -H "Accept: application/vnd.github.raw" 2>/dev/null || echo '')
           if [ -n "$state" ]; then
             prev=$(echo "$state" | cut -d' ' -f1)
             prev_i=$(echo "$state" | cut -d' ' -f2)
@@ -83,4 +85,22 @@ jobs:
             send "💬 GrokScope: new issue/PR (${prev_i} → ${issues} open)"$'\n'"https://github.com/${GITHUB_REPOSITORY}/issues"
           fi
 
-          gh variable set STAR_WATCH_STATE --repo "$GITHUB_REPOSITORY" --body "$stars $issues"
+          # Persist only when something changed (or no state exists yet) so the
+          # meta branch doesn't collect an hourly no-op commit.
+          if [ "$state" != "$stars $issues" ]; then
+            if ! gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${STATE_BRANCH}" >/dev/null 2>&1; then
+              main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)
+              gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+                -f ref="refs/heads/${STATE_BRANCH}" -f sha="$main_sha" >/dev/null
+            fi
+            file_sha=$(gh api "repos/${GITHUB_REPOSITORY}/contents/state.json?ref=${STATE_BRANCH}" \
+                         --jq .sha 2>/dev/null || echo '')
+            gh api -X PUT "repos/${GITHUB_REPOSITORY}/contents/state.json" \
+              -f branch="$STATE_BRANCH" \
+              -f message="star-watch: ${stars} stars, ${issues} open" \
+              -f content="$(printf '%s %s' "$stars" "$issues" | base64)" \
+              ${file_sha:+-f sha="$file_sha"} >/dev/null
+            echo "state saved: $stars $issues"
+          else
+            echo "state unchanged"
+          fi

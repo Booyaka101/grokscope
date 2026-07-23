@@ -3,11 +3,13 @@ name: star-watch
 # Pings Telegram when someone stars the repo, or opens an issue/PR.
 # Runs on GitHub's infra, so it survives the laptop sleeping.
 #
-# State (last-seen counts) lives in the Actions cache under ONE exact key,
-# deleted-then-resaved every run. The old design (unique key per run +
-# restore-keys prefix matching) missed the lookup almost every hour, so every
-# run believed it was the first and re-sent the "armed" baseline ping — hourly
-# Telegram spam. Exact-key restore has no prefix lookup to flake.
+# State (last-seen counts) lives in a repository Actions VARIABLE, not the
+# Actions cache. The cache was the root of the hourly-spam saga: restores
+# failed with "GetCacheEntryDownloadURL ... workflow run not found" (a cache
+# service flake) even when the entry existed, every miss looked like a first
+# run, and the old first-run branch sent a Telegram ping — hourly. Cache
+# entries also expire after 7 days unused, so even a healthy cache would
+# re-baseline weekly. A variable has no expiry and no download-URL dance.
 # Quiet rules, in order of importance:
 #   - a run with no previous state records the baseline SILENTLY — no message
 #   - API values are validated as numbers BEFORE state is touched, so a rate
@@ -21,18 +23,12 @@ on:
 
 permissions:
   contents: read
-  actions: write            # delete-then-save of the state cache
+  actions: write            # read/write the STAR_WATCH_STATE repo variable
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Restore last seen count
-        uses: actions/cache/restore@v4
-        with:
-          path: state
-          key: star-watch-state
-
       - name: Check stars and notify on change
         env:
           TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -40,7 +36,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p state
 
           is_num() { case "$1" in ''|*[!0-9]*) return 1;; *) return 0;; esac; }
 
@@ -51,7 +46,6 @@ jobs:
           }
           repo_json=$(api "https://api.github.com/repos/${GITHUB_REPOSITORY}")
           stars=$(echo "$repo_json" | jq -r '.stargazers_count')
-          forks=$(echo "$repo_json" | jq -r '.forks_count')
           issues=$(echo "$repo_json" | jq -r '.open_issues_count')
 
           # Abort on anything non-numeric BEFORE touching state or Telegram.
@@ -60,16 +54,16 @@ jobs:
             exit 1
           fi
 
+          # Previous state: "<stars> <issues>" in a repo Actions variable.
           prev=""; prev_i=""
-          if [ -f state/stars ]; then
-            prev=$(cat state/stars)
-            prev_i=$(cat state/issues 2>/dev/null || echo '')
+          state=$(gh api "repos/${GITHUB_REPOSITORY}/actions/variables/STAR_WATCH_STATE" \
+                    --jq .value 2>/dev/null || echo '')
+          if [ -n "$state" ]; then
+            prev=$(echo "$state" | cut -d' ' -f1)
+            prev_i=$(echo "$state" | cut -d' ' -f2)
             is_num "$prev" || prev=""
             is_num "$prev_i" || prev_i=""
           fi
-
-          echo "$stars"  > state/stars
-          echo "$issues" > state/issues
           echo "stars=$stars prev=${prev:-none} issues=$issues prev_issues=${prev_i:-none}"
 
           send() {
@@ -81,7 +75,7 @@ jobs:
           }
 
           # No previous state = baseline run: record silently, never ping.
-          # (A lost cache used to re-send the "armed" message every hour.)
+          # (Re-sent "armed" messages on lost state were the hourly spam.)
           if [ -n "$prev" ] && [ "$stars" -gt "$prev" ]; then
             send "⭐ GrokScope: ${prev} → ${stars} stars (+$((stars - prev)))"$'\n'"https://github.com/${GITHUB_REPOSITORY}/stargazers"
           fi
@@ -89,16 +83,4 @@ jobs:
             send "💬 GrokScope: new issue/PR (${prev_i} → ${issues} open)"$'\n'"https://github.com/${GITHUB_REPOSITORY}/issues"
           fi
 
-      # actions/cache entries are immutable, so an exact key must be deleted
-      # before it can be re-saved. Runs only if the check step succeeded — a
-      # failed run keeps the last good state instead of destroying it.
-      - name: Drop previous state
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh cache delete star-watch-state --repo "$GITHUB_REPOSITORY" || true
-
-      - name: Save state
-        uses: actions/cache/save@v4
-        with:
-          path: state
-          key: star-watch-state
+          gh variable set STAR_WATCH_STATE --repo "$GITHUB_REPOSITORY" --body "$stars $issues"

@@ -10,7 +10,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -128,4 +128,56 @@ export function list(): CacheEntry[] {
   }
   entries.sort((a, b) => (a.meta.createdAt < b.meta.createdAt ? 1 : -1));
   return entries;
+}
+
+export interface CacheStats {
+  dir: string;
+  entries: number;
+  bytes: number;
+  /** createdAt of the oldest/newest entries (ISO), if any exist. */
+  oldest?: string;
+  newest?: string;
+}
+
+/** Entry count + on-disk size for `grokscope cache` — free, reads only metadata. */
+export function stats(): CacheStats {
+  const entries = list(); // newest first
+  let bytes = 0;
+  for (const e of entries) {
+    try {
+      bytes += statSync(path.join(cacheDir(), `${e.key}.json`)).size;
+    } catch {
+      continue;
+    }
+  }
+  return {
+    dir: cacheDir(),
+    entries: entries.length,
+    bytes,
+    newest: entries[0]?.meta.createdAt,
+    oldest: entries.at(-1)?.meta.createdAt,
+  };
+}
+
+/** Delete cached entries (optionally only those older than olderThanMs). Returns the count removed. */
+export function clear(olderThanMs?: number): number {
+  let files: string[];
+  try {
+    files = readdirSync(cacheDir());
+  } catch {
+    return 0;
+  }
+  let removed = 0;
+  for (const f of files) {
+    if (!f.endsWith('.json')) continue;
+    const full = path.join(cacheDir(), f);
+    try {
+      if (olderThanMs !== undefined && Date.now() - statSync(full).mtimeMs <= olderThanMs) continue;
+      unlinkSync(full);
+      removed += 1;
+    } catch {
+      continue;
+    }
+  }
+  return removed;
 }

@@ -54,9 +54,39 @@ export function trendingSystem(days: number): string {
   );
 }
 
+// `watch run` diffs these reports across days, so the labels must be machine-
+// findable: exact "sentiment: <label>" and "Momentum: <label>" phrases per topic.
 export function trendingPrompt(topics: string[], days: number): string {
   const window = days === 7 ? 'this week' : `over the last ${days} days`;
-  return `For each topic in [${topics.join(', ')}], search X posts from ${window} and report: sentiment (positive/negative/mixed), top concern, and momentum direction (rising/falling/stable). Be concise. Write one short paragraph per topic, headed by the topic name.`;
+  return `For each topic in [${topics.join(', ')}], search X posts from ${window} and report: sentiment (positive/negative/mixed), top concern, and momentum direction (rising/falling/stable). Be concise. Write one short paragraph per topic. Start each paragraph with the topic name in bold, include the exact phrase "sentiment: <positive|negative|mixed>", and end it with "Momentum: <rising|falling|stable>".`;
+}
+
+export function releaseSystem(days: number): string {
+  return (
+    `You are a developer release analyst working from live X posts. ${windowContext(days)} ` +
+    `Use X search to find the developer community's reaction to this release: what people praise, what broke or regressed, migration pain, and real adoption reports. ${CITE_RULE} ` +
+    `Keep praise and problems clearly separated. ` +
+    `End with an Upgrade Verdict paragraph: upgrade now, wait, or skip — with caveats.`
+  );
+}
+
+export function releasePrompt(project: string, version: string | undefined, days: number): string {
+  const subject = version ? `${project} ${version}` : `the latest ${project} release`;
+  return `What is the developer community's reaction on X to ${subject} over the last ${days} days? Cover what people praise, what breaks or regressed, migration pain, and whether early adopters recommend upgrading. Cite the actual posts.`;
+}
+
+export function painSystem(days: number): string {
+  return (
+    `You are a developer experience researcher working from live X posts. ${windowContext(days)} ` +
+    `Use X search to find the real pain points developers report with this technology. ${CITE_RULE} ` +
+    `Rank pain points by how often and how intensely they come up — most painful first, as a numbered list. ` +
+    `Mention any workarounds developers share. If complaints are rare, say so honestly — don't inflate minor gripes. ` +
+    `End with a Biggest Pain line naming the single most common complaint.`
+  );
+}
+
+export function painPrompt(tech: string, days: number): string {
+  return `What are the top pain points developers report about ${tech} on X in the last ${days} days? Rank them (most common/intense first), each with citations and any workarounds people mention.`;
 }
 
 /** ISO date (YYYY-MM-DD) for n days before now — used for x_search from_date. */
@@ -66,4 +96,4 @@ export function daysAgoISO(days: number): string {
 }
 
 /** Default search windows per mode (days back from today). */
-export const WINDOW_DAYS = { ask: 30, compare: 7, trending: 7 } as const;
+export const WINDOW_DAYS = { ask: 30, compare: 7, trending: 7, release: 14, pain: 30 } as const;

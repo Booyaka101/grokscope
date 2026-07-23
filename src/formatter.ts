@@ -163,8 +163,9 @@ export interface JsonMeta {
   version: string;
 }
 
-/** --json: stable machine-readable schema (for CI, scripts, dashboards). */
-export function renderJson(result: GrokResult, meta: JsonMeta): string {
+/** --json: stable machine-readable schema (for CI, scripts, dashboards).
+ * `extra` lets a command add its own top-level fields (e.g. watch deltas). */
+export function renderJson(result: GrokResult, meta: JsonMeta, extra?: Record<string, unknown>): string {
   const { inputTokens, outputTokens, totalTokens } = result.usage ?? {};
   const rawCost = estimateCostUsd(meta.model, inputTokens, outputTokens);
   const estimatedCostUsd = rawCost === undefined ? undefined : Number(rawCost.toFixed(6));
@@ -192,6 +193,7 @@ export function renderJson(result: GrokResult, meta: JsonMeta): string {
       }),
       allSourceUrls: result.allSourceUrls,
       usage: { inputTokens, outputTokens, totalTokens, estimatedCostUsd },
+      ...(extra ?? {}),
     },
     null,
     2,

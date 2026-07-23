@@ -62,8 +62,13 @@ npx grokscope demo --all    # ask + compare + trending
 | `grokscope ask <question>` | Researches your question from live X posts; cites ≥3 real posts and ends with a **Community Verdict** | last 30 days |
 | `grokscope compare <techA> <techB>` | Head-to-head community sentiment with pros/cons per side, cited, plus a winner with caveats | this week |
 | `grokscope trending --topics "rust,typescript,go"` | Per-topic buzz report: sentiment, top concern, momentum (rising/falling/stable) | this week |
+| `grokscope release <project> [version]` | Community reaction to a release: praise, breakage, migration pain — ends with an **Upgrade Verdict** | last 14 days |
+| `grokscope pain <tech>` | Ranked digest of the pain points developers actually report, with workarounds — ends with a **Biggest Pain** line | last 30 days |
+| `grokscope watch run` | Snapshot sentiment + momentum for every watched topic and show **what moved** since the last run | this week |
+| `grokscope watch add/rm/list/log` | Manage the watched-topic list and print the stored snapshot timeline — **free, no tokens** | — |
 | `grokscope doctor` | 10-second setup check: key present, API reachable, key valid, model available — free, spends no tokens | — |
 | `grokscope history [index]` | List recently cached results, or re-print one by index — **free, no tokens**. Honours `--json` / `--md` | — |
+| `grokscope cache [clear]` | Cache stats, or clear it (`--older-than <hours>` to prune) — **free, no tokens** | — |
 | `grokscope demo [which]` | Replay a recorded real run (`ask` / `compare` / `trending`, or `--all`) — **no API key or credits**. Honours `--json` / `--md` | — |
 
 **Options (all search commands):**
@@ -86,7 +91,28 @@ grokscope history        # list recent cached results (index, command, date, que
 grokscope history 1      # re-print entry #1 for free (parse + render, no tokens)
 ```
 
-`demo` and `doctor` never touch the cache.
+`demo` and `doctor` never touch the cache. `grokscope cache` shows entry count and disk usage; `grokscope cache clear [--older-than <hours>]` prunes it.
+
+## Tracking sentiment over time (watch)
+
+`trending` answers *"what's the buzz right now?"* — `watch` answers *"what changed?"*
+
+```bash
+grokscope watch add rust typescript   # pick your topics (stored locally)
+grokscope watch run                   # snapshot: ONE query across all topics
+# ...days later...
+grokscope watch run                   # new snapshot + what moved
+```
+
+After the report, GrokScope diffs the snapshot against the previous one:
+
+```
+Changes since 2026-07-16
+  rust        sentiment negative -> positive   momentum stable -> rising
+  typescript  no change (mixed, stable)
+```
+
+Each `watch run` is a single live query over all watched topics (same cost as one `trending`), and every snapshot is appended to `GROKSCOPE_HOME/watch-history.jsonl`. `watch log [topic]` prints the stored timeline for free. With `--json`, `watch run` adds a `watch` block — per-topic `sentiment`, `momentum`, `prevSentiment`, `prevMomentum`, `changed` — built for nightly CI jobs that alert on sentiment flips.
 
 **Examples:**
 
@@ -94,8 +120,11 @@ grokscope history 1      # re-print entry #1 for free (parse + render, no tokens
 grokscope ask "is anyone actually using React Server Components in prod?"
 grokscope compare react solidjs
 grokscope trending --topics "rust,typescript,go"
+grokscope release nextjs 15                      # who upgraded, what broke, upgrade verdict
+grokscope pain webpack                           # ranked pain points, with workarounds
 grokscope ask "htmx in production" --handles htmx_org,intercoolerjs --days 60
 grokscope trending --topics "our-sdk" --json > sentiment.json   # nightly CI job
+grokscope watch run --json > snapshot.json                      # sentiment-flip alerts
 grokscope ask "state of deno" --md >> newsletter.md             # newsletter section
 ```
 
@@ -108,7 +137,7 @@ Output is markdown-aware: bold headers, inline citations as blue clickable links
 | `GROK_API_KEY` (or `XAI_API_KEY`) | xAI API key — **required** | — |
 | `GROK_MODEL` | model ID | `grok-4.5` |
 | `GROK_BASE_URL` | API base (useful for proxies/testing) | `https://api.x.ai/v1` |
-| `GROKSCOPE_HOME` | cache directory for `history` / repeat queries | `~/.grokscope` |
+| `GROKSCOPE_HOME` | local state: cache, `history`, watch list + snapshots | `~/.grokscope` |
 | `NO_COLOR` | disable ANSI styling | — |
 
 ## How it works
@@ -120,7 +149,7 @@ One POST to xAI's `/v1/responses` endpoint with the server-side `x_search` tool 
 ```bash
 npm install
 npm run build        # tsc -> dist/
-npm run test:e2e     # 67 checks against a doc-accurate local mock of /v1/responses
+npm run test:e2e     # 101 checks against a doc-accurate local mock of /v1/responses
 npm run verify:live  # the 3 acceptance queries against the REAL API (needs GROK_API_KEY, ~$0.60)
 npm pack             # build the distributable tarball
 ```
@@ -131,7 +160,7 @@ After each query the CLI prints a dim cost line to stderr (`70,821 tokens · ~$0
 
 ## Contributing
 
-Issues and PRs welcome. The whole pipeline is testable offline (`npm run test:e2e` — 67 checks against a doc-accurate mock of xAI's `/v1/responses`), so you don't need an API key to hack on it. Good first contributions: new command modes (release-reaction reports, pain-point digests), output formats, or a `watch` mode with stored history.
+Issues and PRs welcome. The whole pipeline is testable offline (`npm run test:e2e` — 101 checks against a doc-accurate mock of xAI's `/v1/responses`), so you don't need an API key to hack on it. Good first contributions: new command modes (e.g. a `quotes` mode that surfaces the most-shared verbatim takes), output formats, shell completions, or a scheduled `watch run` recipe for GitHub Actions.
 
 ## License
 

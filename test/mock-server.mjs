@@ -73,6 +73,36 @@ function answerFor(userContent) {
     );
     return { text: `## Weekly buzz report\n\n${paras.join('\n\n')}`, urls };
   }
+  if (/reaction on X to/.test(userContent)) {
+    // release mode
+    const m = /reaction on X to (?:the latest )?(.+?)(?: release)? over/.exec(userContent);
+    const subject = m?.[1] ?? 'the release';
+    const u = [xUrl('earlyadopter', 1), xUrl('platformlead', 3), xUrl('migrationlog', 5), xUrl('corecommitter', 2)];
+    return {
+      text:
+        `## ${subject}: the community reaction\n\n` +
+        `**Praise:** upgrade threads highlight the faster dev server and smaller bundles [[1]](${u[0]}); ` +
+        `a platform team reported a clean production rollout on day one [[2]](${u[1]}).\n\n` +
+        `**Problems:** a breaking middleware change is the loudest complaint, with a widely-shared migration postmortem [[3]](${u[2]}); ` +
+        `a maintainer acknowledged the docs gap and pointed at a patch release [[4]](${u[3]}).\n\n` +
+        `**Upgrade Verdict:** upgrade now for greenfield projects; teams with heavy middleware should wait for the first patch release — the fix is confirmed in flight.`,
+      urls: u,
+    };
+  }
+  if (/pain points developers report about/.test(userContent)) {
+    const m = /pain points developers report about (.+?) on X/.exec(userContent);
+    const tech = m?.[1] ?? 'the tech';
+    const u = [xUrl('cicomplains', 2), xUrl('devexperf', 4), xUrl('configwrangler', 7)];
+    return {
+      text:
+        `## Top pain points: ${tech}\n\n` +
+        `1. **Slow builds** — by far the most cited complaint this month [[1]](${u[0]}); ` +
+        `the common workaround is remote caching [[2]](${u[1]}).\n` +
+        `2. **Config sprawl** — several long threads on copy-pasted config nobody understands [[3]](${u[2]}).\n\n` +
+        `**Biggest Pain:** slow builds — it dominates the complaint volume by roughly 3:1.`,
+      urls: u,
+    };
+  }
   // default: ask mode
   const u = [xUrl('bunjsdev', 4), xUrl('nodesource', 9), xUrl('backendweekly', 15), xUrl('sveltekitfan', 21)];
   return {

@@ -20,16 +20,21 @@ import {
   askSystem,
   compareSystem,
   trendingSystem,
+  releaseSystem,
+  painSystem,
   comparePrompt,
   trendingPrompt,
+  releasePrompt,
+  painPrompt,
   daysAgoISO,
   WINDOW_DAYS,
 } from './prompts.js';
 import { renderResult, renderMarkdownDoc, renderJson, estimateCostUsd } from './formatter.js';
 import { runDemo, DEMO_NAMES, type DemoName } from './demo.js';
 import * as cache from './cache.js';
+import * as watch from './watch.js';
 
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 // A new xAI team starts with zero credits and 403s on every call, so getting a
 // key is only half the setup — say so here rather than letting the first call fail.
 const GET_KEY_MSG =
@@ -173,6 +178,18 @@ function renderOutput(result: GrokResult, opts: SharedOpts, meta: RunMeta, model
   process.stdout.write(opts.md ? renderMarkdownDoc(result) : renderResult(result));
 }
 
+/** BYOK transparency: estimate what this query cost. Tokens are the API's own
+ * count; rates come from a per-model table (finding #5) — an unknown GROK_MODEL
+ * omits the dollar figure rather than misreporting it. console.x.ai is the truth. */
+function printCostLine(model: string, result: GrokResult): void {
+  const { inputTokens, outputTokens } = result.usage ?? {};
+  if (inputTokens === undefined || outputTokens === undefined) return;
+  const usd = estimateCostUsd(model, inputTokens, outputTokens);
+  const total = (inputTokens + outputTokens).toLocaleString();
+  const line = usd !== undefined ? `${total} tokens · ~$${usd.toFixed(4)}` : `${total} tokens`;
+  process.stderr.write(`${stderrDim(line)}\n`);
+}
+
 async function run(system: string, user: string, opts: SharedOpts, meta: RunMeta): Promise<void> {
   if (opts.json && opts.md) {
     console.error('--json and --md are mutually exclusive — pick one.');
@@ -215,16 +232,7 @@ async function run(system: string, user: string, opts: SharedOpts, meta: RunMeta
       console.error('⚠ Response was truncated (likely a token limit) — try a narrower query.');
     }
     renderOutput(result, opts, meta, model);
-    // BYOK transparency: estimate what this query cost. Tokens are the API's own
-    // count; rates come from a per-model table (finding #5) — an unknown GROK_MODEL
-    // omits the dollar figure rather than misreporting it. console.x.ai is the truth.
-    const { inputTokens, outputTokens } = result.usage ?? {};
-    if (inputTokens !== undefined && outputTokens !== undefined) {
-      const usd = estimateCostUsd(model, inputTokens, outputTokens);
-      const total = (inputTokens + outputTokens).toLocaleString();
-      const line = usd !== undefined ? `${total} tokens · ~$${usd.toFixed(4)}` : `${total} tokens`;
-      process.stderr.write(`${stderrDim(line)}\n`);
-    }
+    printCostLine(model, result);
   } catch (err) {
     stop();
     if (err instanceof GrokApiError) {
@@ -252,11 +260,16 @@ Examples:
   $ grokscope ask "htmx in production" --handles htmx_org --days 60
   $ grokscope compare react solidjs
   $ grokscope trending --topics "rust,typescript,go"
+  $ grokscope release nextjs 15                                  # reaction to a release
+  $ grokscope pain webpack                                       # ranked pain points
+  $ grokscope watch add rust typescript                          # start tracking topics
+  $ grokscope watch run                                          # snapshot + what moved
   $ grokscope trending --topics "our-sdk" --json > report.json   # CI / scripts
   $ grokscope ask "state of deno" --md >> newsletter.md          # clean markdown
   $ grokscope ask "state of deno" --fresh                        # bypass the cache
   $ grokscope history                                            # recent cached results
   $ grokscope history 1                                          # re-print one for free
+  $ grokscope cache clear --older-than 48                        # prune the cache
   $ grokscope doctor                                             # check your setup
 
 Environment:
@@ -326,6 +339,206 @@ withSharedOpts(
     days,
   });
 });
+
+withSharedOpts(
+  program
+    .command('release')
+    .description('community reaction to a release: praise, breakage, migration pain, upgrade verdict')
+    .argument('<project>', 'the project that shipped (e.g. nextjs, bun, react)')
+    .argument('[version]', 'a specific version (e.g. 15, 2.0) — omit for the latest release'),
+).action(async (project: string, version: string | undefined, opts: SharedOpts) => {
+  const days = resolveDays(opts, WINDOW_DAYS.release);
+  const query = version ? `${project} ${version}` : project;
+  await run(releaseSystem(days), releasePrompt(project, version, days), opts, {
+    command: 'release',
+    query,
+    days,
+  });
+});
+
+withSharedOpts(
+  program
+    .command('pain')
+    .description('ranked digest of the pain points developers report about a technology')
+    .argument('<tech...>', 'the technology to research'),
+).action(async (techParts: string[], opts: SharedOpts) => {
+  const tech = techParts.join(' ');
+  const days = resolveDays(opts, WINDOW_DAYS.pain);
+  await run(painSystem(days), painPrompt(tech, days), opts, {
+    command: 'pain',
+    query: tech,
+    days,
+  });
+});
+
+const watchCmd = program
+  .command('watch')
+  .description('track community sentiment for a set of topics over time (snapshots + what moved)');
+
+watchCmd
+  .command('list', { isDefault: true })
+  .description('show the watched topics — free, reads local files only')
+  .action(() => {
+    const topics = watch.loadTopics();
+    if (topics.length === 0) {
+      console.log('No watched topics yet. Add some:  grokscope watch add rust typescript');
+      return;
+    }
+    console.log(`Watched topics (${cache.grokscopeHome()}):\n`);
+    topics.forEach((t, i) => console.log(`  ${i + 1}. ${t}`));
+    console.log('\nTake a snapshot:  grokscope watch run');
+  });
+
+watchCmd
+  .command('add')
+  .description('add topics to the watch list')
+  .argument('<topics...>', 'topics to watch (space- or comma-separated)')
+  .action((raw: string[]) => {
+    const topics = watch.loadTopics();
+    const have = new Set(topics.map((t) => t.toLowerCase()));
+    const incoming = raw
+      .flatMap((t) => t.split(','))
+      .map((t) => t.trim())
+      .filter(Boolean);
+    for (const t of incoming) {
+      if (have.has(t.toLowerCase())) continue;
+      have.add(t.toLowerCase());
+      topics.push(t);
+    }
+    watch.saveTopics(topics);
+    console.log(`Watching ${topics.length} topic${topics.length === 1 ? '' : 's'}: ${topics.join(', ')}`);
+    console.log('Take a snapshot:  grokscope watch run');
+  });
+
+watchCmd
+  .command('rm')
+  .alias('remove')
+  .description('remove a topic from the watch list')
+  .argument('<topic>', 'the topic to stop watching')
+  .action((topic: string) => {
+    const topics = watch.loadTopics();
+    const next = topics.filter((t) => t.toLowerCase() !== topic.trim().toLowerCase());
+    if (next.length === topics.length) {
+      console.error(`"${topic}" is not on the watch list. Run \`grokscope watch\` to see it.`);
+      process.exit(1);
+    }
+    watch.saveTopics(next);
+    console.log(next.length ? `Watching: ${next.join(', ')}` : 'Watch list is now empty.');
+  });
+
+withSharedOpts(
+  watchCmd
+    .command('run')
+    .description('take a sentiment snapshot of every watched topic and diff it against the last run'),
+).action(async (opts: SharedOpts) => {
+  if (opts.json && opts.md) {
+    console.error('--json and --md are mutually exclusive — pick one.');
+    process.exit(1);
+  }
+  validateHandleOpts(opts);
+  const topics = watch.loadTopics();
+  if (topics.length === 0) {
+    console.error('No watched topics yet. Add some first:  grokscope watch add rust typescript');
+    process.exit(1);
+  }
+  const apiKey = requireApiKey();
+  const days = resolveDays(opts, WINDOW_DAYS.trending);
+  const system = trendingSystem(days);
+  const user = trendingPrompt(topics, days);
+  const xSearch = xSearchFromOpts(opts, days);
+  const model = resolvedModel();
+
+  // A snapshot is a fresh sample by definition, so the cache is never read here —
+  // only written, so `grokscope history` can re-print the report for free.
+  const stop = startSpinner(
+    `Snapshotting ${topics.length} topic${topics.length === 1 ? '' : 's'} (last ${days} days) via ${model}`,
+  );
+  try {
+    const { result, raw } = await askGrok({ system, user, xSearch }, apiKey);
+    stop();
+    if (!result.content.trim()) {
+      console.error('The model returned an empty response. Try again, or trim the topic list.');
+      process.exit(1);
+    }
+    cache.put(cache.cacheKey({ model, system, user, xSearch }), raw, {
+      command: 'watch',
+      query: topics.join(', '),
+      model,
+      days,
+      createdAt: new Date().toISOString(),
+    });
+    if (result.incomplete) {
+      console.error('⚠ Response was truncated (likely a token limit) — try fewer topics.');
+    }
+    const readings = watch.parseTopicReadings(result.content, topics);
+    const prev = watch.loadSnapshots().at(-1);
+    const deltas = watch.diffReadings(readings, prev);
+    watch.appendSnapshot({ at: new Date().toISOString(), days, model, readings });
+
+    if (opts.json) {
+      process.stdout.write(
+        renderJson(
+          result,
+          { command: 'watch', query: topics.join(', '), model, searchWindowDays: days, version: VERSION },
+          { watch: { previousSnapshotAt: prev?.at, topics: deltas } },
+        ),
+      );
+    } else {
+      process.stdout.write(opts.md ? renderMarkdownDoc(result) : renderResult(result));
+      if (prev) {
+        process.stdout.write(`\n${watch.renderDeltas(deltas, prev.at)}\n`);
+      } else {
+        process.stderr.write(
+          `${stderrDim(
+            `First snapshot recorded (${topics.length} topic${topics.length === 1 ? '' : 's'}) — run \`grokscope watch run\` again later to see what moved.`,
+          )}\n`,
+        );
+      }
+    }
+    printCostLine(model, result);
+  } catch (err) {
+    stop();
+    if (err instanceof GrokApiError) {
+      console.error(`Error: ${err.message}`);
+    } else {
+      console.error(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    process.exit(1);
+  }
+});
+
+watchCmd
+  .command('log')
+  .description('show stored snapshots, oldest first — free, reads local files only')
+  .argument('[topic]', 'only show readings for this topic')
+  .option('--json', 'machine-readable JSON output (for CI/scripts)')
+  .action((topic: string | undefined, opts: { json?: boolean }) => {
+    let snaps = watch.loadSnapshots();
+    if (topic) {
+      snaps = snaps
+        .map((s) => ({
+          ...s,
+          readings: s.readings.filter((r) => r.topic.toLowerCase() === topic.toLowerCase()),
+        }))
+        .filter((s) => s.readings.length > 0);
+    }
+    if (snaps.length === 0) {
+      console.log(
+        topic
+          ? `No snapshots for "${topic}" yet — is it watched? (grokscope watch)`
+          : 'No snapshots yet — take one:  grokscope watch run',
+      );
+      return;
+    }
+    if (opts.json) {
+      process.stdout.write(`${JSON.stringify(snaps, null, 2)}\n`);
+      return;
+    }
+    for (const s of snaps) {
+      const row = s.readings.map((r) => `${r.topic}: ${r.sentiment}/${r.momentum}`).join('   ');
+      console.log(`  ${s.at.slice(0, 10)}  ${row}`);
+    }
+  });
 
 program
   .command('doctor')
@@ -437,6 +650,56 @@ program
       opts,
       { command: entry.meta.command, query: entry.meta.query, days: entry.meta.days },
       entry.meta.model,
+    );
+  });
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+const cacheCmd = program
+  .command('cache')
+  .description('inspect or clear the local response cache — free, local only');
+
+cacheCmd
+  .command('stats', { isDefault: true })
+  .description('entry count, disk usage, and age range of the cache')
+  .action(() => {
+    const s = cache.stats();
+    console.log(`Cache directory: ${s.dir}`);
+    console.log(`Entries: ${s.entries}`);
+    console.log(`Size: ${formatBytes(s.bytes)}`);
+    if (s.oldest && s.newest) {
+      console.log(`Range: ${s.oldest.slice(0, 10)} … ${s.newest.slice(0, 10)}`);
+    }
+    if (s.entries > 0) {
+      console.log('\nClear it:  grokscope cache clear    (or:  grokscope cache clear --older-than 48)');
+    }
+  });
+
+cacheCmd
+  .command('clear')
+  .description('delete cached results (all of them, or only entries older than --older-than)')
+  .option('--older-than <hours>', 'only delete entries older than this many hours')
+  .action((opts: { olderThan?: string }) => {
+    let olderThanMs: number | undefined;
+    if (opts.olderThan !== undefined) {
+      const hours = Number(opts.olderThan);
+      if (!Number.isFinite(hours) || hours < 0) {
+        console.error(
+          `Invalid --older-than value: ${opts.olderThan} (expected a non-negative number of hours)`,
+        );
+        process.exit(1);
+      }
+      olderThanMs = hours * 3_600_000;
+    }
+    const removed = cache.clear(olderThanMs);
+    console.log(
+      removed === 0
+        ? 'Nothing to clear — the cache is empty (or has nothing that old).'
+        : `Removed ${removed} cached result${removed === 1 ? '' : 's'}.`,
     );
   });
 

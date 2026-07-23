@@ -12,7 +12,7 @@
 
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createMockServer } from './mock-server.mjs';
@@ -362,6 +362,158 @@ await mock.close();
     `code=${show.code} requests=${cmock.requests.length}`,
   );
   await cmock.close();
+}
+
+// 21. release — reaction report with a 14-day default window
+{
+  const rmock = createMockServer();
+  const rport = await rmock.listen();
+  const renv = {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${rport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'release-home'),
+  };
+  const r = await runCli(['release', 'nextjs', '15'], renv);
+  check('release -> exit 0', r.code === 0, r.stderr.slice(0, 300));
+  check('release -> Upgrade Verdict section', r.stdout.includes('Upgrade Verdict'), r.stdout.slice(-300));
+  check('release -> separates praise from problems', /Praise/.test(r.stdout) && /Problems/.test(r.stdout), r.stdout.slice(0, 400));
+  check('release -> sources cited', (r.stdout.match(/https:\/\/x\.com\//g) ?? []).length >= 4, r.stdout.slice(-400));
+  check(
+    'release -> 14-day window',
+    rmock.requests.at(-1).tools[0].from_date === new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10),
+    JSON.stringify(rmock.requests.at(-1).tools),
+  );
+  check('release -> version reaches the prompt', /nextjs 15/.test(rmock.requests.at(-1).input[0].content), rmock.requests.at(-1).input[0].content);
+
+  const latest = await runCli(['release', 'bun'], renv);
+  check('release -> no version asks about the latest release', latest.code === 0 && /the latest bun release/.test(rmock.requests.at(-1).input[0].content), rmock.requests.at(-1).input[0].content);
+  await rmock.close();
+}
+
+// 22. pain — ranked pain-point digest with a 30-day default window
+{
+  const pmock = createMockServer();
+  const pport = await pmock.listen();
+  const penv = {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${pport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'pain-home'),
+  };
+  const r = await runCli(['pain', 'webpack'], penv);
+  check('pain -> exit 0', r.code === 0, r.stderr.slice(0, 300));
+  check('pain -> ranked numbered list', /1\.\s/.test(r.stdout) && /2\.\s/.test(r.stdout), r.stdout.slice(0, 400));
+  check('pain -> Biggest Pain verdict line', r.stdout.includes('Biggest Pain'), r.stdout.slice(-300));
+  check('pain -> mentions a workaround', /workaround/i.test(r.stdout), r.stdout.slice(0, 400));
+  check(
+    'pain -> 30-day window',
+    pmock.requests.at(-1).tools[0].from_date === new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10),
+    JSON.stringify(pmock.requests.at(-1).tools),
+  );
+  await pmock.close();
+}
+
+// 23. watch — topic list lifecycle, snapshots, deltas, log
+{
+  const wmock = createMockServer();
+  const wport = await wmock.listen();
+  const whome = path.join(TMP_HOME, 'watch-home');
+  const wenv = {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${wport}/v1`,
+    GROKSCOPE_HOME: whome,
+  };
+
+  const empty = await runCli(['watch'], wenv);
+  check('watch (empty) -> guidance, exit 0', empty.code === 0 && /No watched topics yet/.test(empty.stdout), empty.stdout);
+  const runEmpty = await runCli(['watch', 'run'], wenv);
+  check('watch run (empty) -> exit 1 before any API call', runEmpty.code === 1 && /No watched topics yet/.test(runEmpty.stderr) && wmock.requests.length === 0, runEmpty.stderr);
+
+  const add = await runCli(['watch', 'add', 'rust', 'typescript'], wenv);
+  check('watch add -> confirms both topics', add.code === 0 && /Watching 2 topics: rust, typescript/.test(add.stdout), add.stdout);
+  const dup = await runCli(['watch', 'add', 'RUST'], wenv);
+  check('watch add -> dedupes case-insensitively', dup.code === 0 && /Watching 2 topics/.test(dup.stdout), dup.stdout);
+  const listed = await runCli(['watch', 'list'], wenv);
+  check('watch list -> shows the topics', /1\. rust/.test(listed.stdout) && /2\. typescript/.test(listed.stdout), listed.stdout);
+
+  // Seed an older snapshot so the next run has something to diff against:
+  // rust was negative/stable, typescript was mixed/stable.
+  const seeded = {
+    at: new Date(Date.now() - 7 * 86_400_000).toISOString(),
+    days: 7,
+    model: 'grok-4.5',
+    readings: [
+      { topic: 'rust', sentiment: 'negative', momentum: 'stable' },
+      { topic: 'typescript', sentiment: 'mixed', momentum: 'stable' },
+    ],
+  };
+  mkdirSync(whome, { recursive: true });
+  writeFileSync(path.join(whome, 'watch-history.jsonl'), `${JSON.stringify(seeded)}\n`);
+
+  // The mock reports rust positive/rising, typescript mixed/stable.
+  const run1 = await runCli(['watch', 'run'], wenv);
+  check('watch run -> exit 0 with the report', run1.code === 0 && /buzz report/i.test(run1.stdout), run1.stderr.slice(0, 300));
+  check('watch run -> sends a trending-shaped query', /trend analyst/.test(wmock.requests.at(-1).instructions), wmock.requests.at(-1).instructions);
+  check('watch run -> shows what moved since last snapshot', /Changes since/.test(run1.stdout) && /sentiment negative -> positive/.test(run1.stdout) && /momentum stable -> rising/.test(run1.stdout), run1.stdout.slice(-500));
+  check('watch run -> unchanged topic says so', /typescript\s+no change \(mixed, stable\)/.test(run1.stdout), run1.stdout.slice(-500));
+  const histLines = readFileSync(path.join(whome, 'watch-history.jsonl'), 'utf8').trim().split('\n');
+  check('watch run -> appends a snapshot', histLines.length === 2, `lines=${histLines.length}`);
+
+  const log = await runCli(['watch', 'log'], wenv);
+  check('watch log -> one dated row per snapshot', log.code === 0 && (log.stdout.match(/^\s+\d{4}-\d{2}-\d{2}\s/gm) ?? []).length === 2, log.stdout);
+  const logTopic = await runCli(['watch', 'log', 'rust'], wenv);
+  check('watch log <topic> -> filters to that topic', /rust: /.test(logTopic.stdout) && !/typescript: /.test(logTopic.stdout), logTopic.stdout);
+
+  const rm = await runCli(['watch', 'rm', 'rust'], wenv);
+  check('watch rm -> removes the topic', rm.code === 0 && /Watching: typescript/.test(rm.stdout), rm.stdout);
+  const rmMissing = await runCli(['watch', 'rm', 'rust'], wenv);
+  check('watch rm -> unknown topic errors', rmMissing.code === 1 && /not on the watch list/.test(rmMissing.stderr), rmMissing.stderr);
+
+  const runJson = await runCli(['watch', 'run', '--json'], wenv);
+  let wparsed = null;
+  try { wparsed = JSON.parse(runJson.stdout); } catch {}
+  check('watch run --json -> valid JSON with watch block', runJson.code === 0 && wparsed?.command === 'watch' && Array.isArray(wparsed?.watch?.topics), runJson.stdout.slice(0, 200));
+  check(
+    'watch run --json -> delta fields per topic',
+    wparsed?.watch?.topics?.[0]?.topic === 'typescript' && wparsed.watch.topics[0].sentiment === 'positive' && wparsed.watch.topics[0].prevSentiment === 'mixed' && wparsed.watch.topics[0].changed === true && typeof wparsed.watch.previousSnapshotAt === 'string',
+    JSON.stringify(wparsed?.watch),
+  );
+  await wmock.close();
+
+  // First-ever snapshot (fresh home): no delta yet, but say so.
+  const fmock = createMockServer();
+  const fport = await fmock.listen();
+  const fenv = {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${fport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'watch-home-first'),
+  };
+  await runCli(['watch', 'add', 'zig'], fenv);
+  const first = await runCli(['watch', 'run'], fenv);
+  check('watch run (first) -> notes the first snapshot on stderr', first.code === 0 && /First snapshot recorded/.test(first.stderr) && !/Changes since/.test(first.stdout), first.stderr.slice(0, 300));
+  await fmock.close();
+}
+
+// 24. cache command — stats + clear
+{
+  const cm = createMockServer();
+  const cp = await cm.listen();
+  const cenv = {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${cp}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'cachecmd-home'),
+  };
+  await runCli(['ask', 'cache stats probe'], cenv);
+  const st = await runCli(['cache'], cenv);
+  check('cache -> stats show the entry + size', st.code === 0 && /Entries: 1/.test(st.stdout) && /Size: /.test(st.stdout), st.stdout);
+  const keep = await runCli(['cache', 'clear', '--older-than', '48'], cenv);
+  check('cache clear --older-than -> keeps fresh entries', keep.code === 0 && /Nothing to clear/.test(keep.stdout), keep.stdout);
+  const cl = await runCli(['cache', 'clear'], cenv);
+  check('cache clear -> removes the entry', cl.code === 0 && /Removed 1 cached result/.test(cl.stdout), cl.stdout);
+  const st2 = await runCli(['cache'], cenv);
+  check('cache -> empty after clear', /Entries: 0/.test(st2.stdout), st2.stdout);
+  const h = await runCli(['history'], cenv);
+  check('history -> empty after cache clear', /No cached results yet/.test(h.stdout), h.stdout);
+  await cm.close();
 }
 
 const failed = results.filter((r) => !r.pass).length;

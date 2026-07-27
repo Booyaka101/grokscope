@@ -1,22 +1,29 @@
 name: star-watch
 
-# Pings Telegram when someone stars the repo, or opens an issue/PR.
-# Runs on GitHub's infra, so it survives the laptop sleeping.
+# Pings Telegram when ANY of the owner's public repos gains a star or an
+# issue/PR. Runs on GitHub's infra, so it survives the laptop sleeping.
 #
-# State (last-seen counts) lives in state.json on the meta/star-watch-state
-# branch, read/written via the contents API. Everything else failed in
-# practice: the Actions cache never restored for this workflow's runs
-# ("GetCacheEntryDownloadURL ... workflow run not found", a cache service
-# flake) and expires after 7 days unused anyway; repo Actions variables
-# reject GITHUB_TOKEN writes ("Resource not accessible by integration").
-# Every state miss looked like a first run, and the old first-run branch
-# sent a Telegram ping — hourly. The state file is committed only when the
-# counts actually change, so the meta branch stays quiet too.
+# It lives here because this is where TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID are
+# set, but it watches the whole account — the previous version only watched THIS
+# repo, which had 0 stars, while grok-loop-kit, palschema-hub and
+# rust-symbol-audit quietly collected 4 between them and nothing ever fired.
+# Enumerating the account also means new repos are covered the day they are
+# created, with no per-repo workflow or secret to remember.
+#
+# State (last-seen counts per repo) lives in state.json on the
+# meta/star-watch-state branch, read/written via the contents API. Everything
+# else failed in practice: the Actions cache never restored for this workflow's
+# runs ("GetCacheEntryDownloadURL ... workflow run not found") and expires after
+# 7 days unused anyway; repo Actions variables reject GITHUB_TOKEN writes
+# ("Resource not accessible by integration"). Every state miss looked like a
+# first run, and the old first-run branch sent a Telegram ping — hourly.
+#
 # Quiet rules, in order of importance:
-#   - a run with no previous state records the baseline SILENTLY — no message
+#   - a repo with no previous state records its baseline SILENTLY — no message
 #   - API values are validated as numbers BEFORE state is touched, so a rate
 #     limit or API hiccup can neither poison the baseline nor trigger a ping
 #   - messages fire only on a genuine increase
+#   - one message per run summarising all changes, not one per repo
 
 on:
   schedule:
@@ -30,7 +37,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: Check stars and notify on change
+      - name: Check every repo's stars and notify on change
         env:
           TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -38,56 +45,62 @@ jobs:
         run: |
           set -euo pipefail
 
-          is_num() { case "$1" in ''|*[!0-9]*) return 1;; *) return 0;; esac; }
+          OWNER="${GITHUB_REPOSITORY%%/*}"
+          STATE_BRANCH="meta/star-watch-state"
 
-          api() {
-            curl -sS --max-time 20 \
-              -H "Accept: application/vnd.github+json" \
-              -H "Authorization: Bearer ${GH_TOKEN}" "$1"
-          }
-          repo_json=$(api "https://api.github.com/repos/${GITHUB_REPOSITORY}")
-          stars=$(echo "$repo_json" | jq -r '.stargazers_count')
-          issues=$(echo "$repo_json" | jq -r '.open_issues_count')
+          # --- current counts for every public repo, as "name stars issues" ---
+          now=$(gh api "users/${OWNER}/repos?per_page=100&type=owner" \
+                  --jq '.[] | select(.fork == false) | "\(.name) \(.stargazers_count) \(.open_issues_count)"' \
+                | sort)
 
-          # Abort on anything non-numeric BEFORE touching state or Telegram.
-          if ! is_num "$stars" || ! is_num "$issues"; then
-            echo "non-numeric API response (stars=$stars issues=$issues) — skipping without saving state"
+          if [ -z "$now" ]; then
+            echo "no repos returned — skipping without saving state"
             exit 1
           fi
 
-          # Previous state: "<stars> <issues>" in state.json on the meta branch.
-          STATE_BRANCH="meta/star-watch-state"
-          prev=""; prev_i=""
-          state=$(gh api "repos/${GITHUB_REPOSITORY}/contents/state.json?ref=${STATE_BRANCH}" \
-                    -H "Accept: application/vnd.github.raw" 2>/dev/null || echo '')
-          if [ -n "$state" ]; then
-            prev=$(echo "$state" | cut -d' ' -f1)
-            prev_i=$(echo "$state" | cut -d' ' -f2)
-            is_num "$prev" || prev=""
-            is_num "$prev_i" || prev_i=""
+          # Abort on anything non-numeric BEFORE state or Telegram are touched.
+          if echo "$now" | awk 'NF!=3 || $2 !~ /^[0-9]+$/ || $3 !~ /^[0-9]+$/ { exit 1 }'; then :; else
+            echo "non-numeric API response — skipping without saving state"
+            exit 1
           fi
-          echo "stars=$stars prev=${prev:-none} issues=$issues prev_issues=${prev_i:-none}"
 
-          send() {
+          prev=$(gh api "repos/${GITHUB_REPOSITORY}/contents/state.json?ref=${STATE_BRANCH}" \
+                   -H "Accept: application/vnd.github.raw" 2>/dev/null || echo '')
+
+          lookup() { echo "$prev" | awk -v r="$1" -v c="$2" '$1==r { print $c }'; }
+
+          msg=""
+          while read -r name stars issues; do
+            [ -n "$name" ] || continue
+            p_stars=$(lookup "$name" 2)
+            p_issues=$(lookup "$name" 3)
+
+            # No previous entry = new repo: record its baseline silently.
+            if [ -n "$p_stars" ] && [ "$stars" -gt "$p_stars" ]; then
+              msg="${msg}⭐ ${name}: ${p_stars} → ${stars} stars (+$((stars - p_stars)))"$'\n'
+            fi
+            if [ -n "$p_issues" ] && [ "$issues" -gt "$p_issues" ]; then
+              msg="${msg}💬 ${name}: new issue/PR (${p_issues} → ${issues} open)"$'\n'
+            fi
+          done <<< "$now"
+
+          echo "watching $(echo "$now" | wc -l) repo(s)"
+          echo "$now" | awk '$2 > 0 { print "  " $1 " ★" $2 }'
+
+          if [ -n "$msg" ]; then
             curl -sS --max-time 20 -X POST \
               "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TG_CHAT}" \
-              --data-urlencode "text=$1" \
+              --data-urlencode "text=${msg}https://github.com/${OWNER}?tab=repositories" \
               -d disable_web_page_preview=true >/dev/null
-          }
-
-          # No previous state = baseline run: record silently, never ping.
-          # (Re-sent "armed" messages on lost state were the hourly spam.)
-          if [ -n "$prev" ] && [ "$stars" -gt "$prev" ]; then
-            send "⭐ GrokScope: ${prev} → ${stars} stars (+$((stars - prev)))"$'\n'"https://github.com/${GITHUB_REPOSITORY}/stargazers"
-          fi
-          if [ -n "$prev_i" ] && [ "$issues" -gt "$prev_i" ]; then
-            send "💬 GrokScope: new issue/PR (${prev_i} → ${issues} open)"$'\n'"https://github.com/${GITHUB_REPOSITORY}/issues"
+            echo "notified"
+          else
+            echo "nothing new"
           fi
 
-          # Persist only when something changed (or no state exists yet) so the
-          # meta branch doesn't collect an hourly no-op commit.
-          if [ "$state" != "$stars $issues" ]; then
+          # Persist only when something changed, so the meta branch doesn't
+          # collect an hourly no-op commit.
+          if [ "$prev" != "$now" ]; then
             if ! gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${STATE_BRANCH}" >/dev/null 2>&1; then
               main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)
               gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" \
@@ -97,10 +110,10 @@ jobs:
                          --jq .sha 2>/dev/null || echo '')
             gh api -X PUT "repos/${GITHUB_REPOSITORY}/contents/state.json" \
               -f branch="$STATE_BRANCH" \
-              -f message="star-watch: ${stars} stars, ${issues} open" \
-              -f content="$(printf '%s %s' "$stars" "$issues" | base64)" \
+              -f message="star-watch: $(echo "$now" | awk '{s+=$2} END {print s}') stars across $(echo "$now" | wc -l) repos" \
+              -f content="$(echo "$now" | base64 -w0)" \
               ${file_sha:+-f sha="$file_sha"} >/dev/null
-            echo "state saved: $stars $issues"
+            echo "state saved"
           else
             echo "state unchanged"
           fi

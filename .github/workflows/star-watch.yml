@@ -104,7 +104,7 @@ jobs:
           fi
 
           echo "watching $(echo "$now" | wc -l) repo(s)"
-          echo "$now" | awk '$2 > 0 { print "  " $1 " ★" $2 }'
+          echo "$now" | awk '$1!="TOTALS" && $2 > 0 { print "  " $1 " ★" $2 }'
 
           if [ -n "$msg" ]; then
             curl -sS --max-time 20 -X POST \

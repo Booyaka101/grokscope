@@ -48,9 +48,12 @@ jobs:
           OWNER="${GITHUB_REPOSITORY%%/*}"
           STATE_BRANCH="meta/star-watch-state"
 
-          # --- current counts for every public repo, as "name stars issues" ---
+          # --- stars per repo, as "name stars" -------------------------------
+          # open_issues_count is deliberately NOT used any more: it counts PRs,
+          # so every weekly Dependabot batch pinged Telegram. Human activity is
+          # measured account-wide below via the search API instead.
           now=$(gh api "users/${OWNER}/repos?per_page=100&type=owner" \
-                  --jq '.[] | select(.fork == false) | "\(.name) \(.stargazers_count) \(.open_issues_count)"' \
+                  --jq '.[] | select(.fork == false) | "\(.name) \(.stargazers_count)"' \
                 | sort)
 
           if [ -z "$now" ]; then
@@ -59,10 +62,20 @@ jobs:
           fi
 
           # Abort on anything non-numeric BEFORE state or Telegram are touched.
-          if echo "$now" | awk 'NF!=3 || $2 !~ /^[0-9]+$/ || $3 !~ /^[0-9]+$/ { exit 1 }'; then :; else
+          if echo "$now" | awk 'NF!=2 || $2 !~ /^[0-9]+$/ { exit 1 }'; then :; else
             echo "non-numeric API response — skipping without saving state"
             exit 1
           fi
+
+          # --- human issues + human PRs, account-wide (2 search calls) -------
+          issues_open=$(gh api "search/issues?q=user:${OWNER}+state:open+is:issue" --jq .total_count)
+          prs_open=$(gh api 'search/issues?q=user:'"${OWNER}"'+state:open+is:pr+-author:app/dependabot' --jq .total_count)
+          is_num() { case "$1" in ''|*[!0-9]*) return 1;; *) return 0;; esac; }
+          if ! is_num "$issues_open" || ! is_num "$prs_open"; then
+            echo "non-numeric search response (issues=$issues_open prs=$prs_open) — skipping without saving state"
+            exit 1
+          fi
+          now="$now"$'\n'"TOTALS ${issues_open} ${prs_open}"
 
           prev=$(gh api "repos/${GITHUB_REPOSITORY}/contents/state.json?ref=${STATE_BRANCH}" \
                    -H "Accept: application/vnd.github.raw" 2>/dev/null || echo '')
@@ -70,19 +83,25 @@ jobs:
           lookup() { echo "$prev" | awk -v r="$1" -v c="$2" '$1==r { print $c }'; }
 
           msg=""
-          while read -r name stars issues; do
+          while read -r name stars _rest; do
             [ -n "$name" ] || continue
+            [ "$name" = "TOTALS" ] && continue
             p_stars=$(lookup "$name" 2)
-            p_issues=$(lookup "$name" 3)
 
             # No previous entry = new repo: record its baseline silently.
             if [ -n "$p_stars" ] && [ "$stars" -gt "$p_stars" ]; then
               msg="${msg}⭐ ${name}: ${p_stars} → ${stars} stars (+$((stars - p_stars)))"$'\n'
             fi
-            if [ -n "$p_issues" ] && [ "$issues" -gt "$p_issues" ]; then
-              msg="${msg}💬 ${name}: new issue/PR (${p_issues} → ${issues} open)"$'\n'
-            fi
           done <<< "$now"
+
+          # Human issue / non-bot PR increases, account-wide.
+          p_issues=$(lookup TOTALS 2); p_prs=$(lookup TOTALS 3)
+          if [ -n "$p_issues" ] && [ "$issues_open" -gt "$p_issues" ]; then
+            msg="${msg}💬 new issue (${p_issues} → ${issues_open} open) — https://github.com/issues?q=user%3A${OWNER}+state%3Aopen+is%3Aissue"$'\n'
+          fi
+          if [ -n "$p_prs" ] && [ "$prs_open" -gt "$p_prs" ]; then
+            msg="${msg}🔀 new PR from a human (${p_prs} → ${prs_open} open) — https://github.com/pulls?q=user%3A${OWNER}+state%3Aopen+is%3Apr+-author%3Aapp%2Fdependabot"$'\n'
+          fi
 
           echo "watching $(echo "$now" | wc -l) repo(s)"
           echo "$now" | awk '$2 > 0 { print "  " $1 " ★" $2 }'
@@ -110,7 +129,7 @@ jobs:
                          --jq .sha 2>/dev/null || echo '')
             gh api -X PUT "repos/${GITHUB_REPOSITORY}/contents/state.json" \
               -f branch="$STATE_BRANCH" \
-              -f message="star-watch: $(echo "$now" | awk '{s+=$2} END {print s}') stars across $(echo "$now" | wc -l) repos" \
+              -f message="star-watch: $(echo "$now" | awk '$1!="TOTALS"{s+=$2} END {print s}') stars, ${issues_open} issue(s), ${prs_open} human PR(s)" \
               -f content="$(echo "$now" | base64 -w0)" \
               ${file_sha:+-f sha="$file_sha"} >/dev/null
             echo "state saved"

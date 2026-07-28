@@ -1,34 +1,35 @@
-Booyaka101 0 0
-CCTracker 0 0
-FirstLogin 0 0
-FirstLoginV2 0 0
-Scrap 0 0
-agentscript-nvim 0 0
-booyaka.github.io 0 0
-caps-brief 0 0
-cargo-witness 0 0
-comfyui-node-safety-check 0 0
-comfyui-node-safety-test-fixtures 0 0
-comfyui-vlm-gates 0 0
-comfyui-workflow-rescue 0 0
-dynamic-jobs-economy 0 0
-economy-gaurdian 0 5
-fudog-js 0 0
-gamerhub-pro-bot 0 0
-gemcatch 0 0
-ghas-free-pack 0 0
-grok-loop-kit 0 0
-grokscope 0 0
-mcp-app-debug 0 1
-mcp-vet 0 0
-npm-script-lens 0 0
-pal-schema-collect 0 0
-palschema-hub 2 2
-pnpm11-ci-guard 0 0
-porter 1 0
-rust-symbol-audit 1 1
-rust-symbol-audit-demo 0 1
-shopify-upseller 0 0
-studio-os 0 0
-ts7-compat-guard 0 0
-wp-schema-automator 0 0
+Booyaka101 0
+CCTracker 0
+FirstLogin 0
+FirstLoginV2 0
+Scrap 0
+agentscript-nvim 0
+booyaka.github.io 0
+caps-brief 0
+cargo-witness 0
+comfyui-node-safety-check 0
+comfyui-node-safety-test-fixtures 0
+comfyui-vlm-gates 0
+comfyui-workflow-rescue 0
+dynamic-jobs-economy 0
+economy-gaurdian 0
+fudog-js 0
+gamerhub-pro-bot 0
+gemcatch 0
+ghas-free-pack 0
+grok-loop-kit 0
+grokscope 0
+mcp-app-debug 0
+mcp-vet 0
+npm-script-lens 0
+pal-schema-collect 0
+palschema-hub 2
+pnpm11-ci-guard 0
+porter 1
+rust-symbol-audit 1
+rust-symbol-audit-demo 0
+shopify-upseller 0
+studio-os 0
+ts7-compat-guard 0
+wp-schema-automator 0
+TOTALS 1 2

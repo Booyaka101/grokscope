@@ -23,7 +23,7 @@ mcp-app-debug 0
 mcp-vet 0
 npm-script-lens 0
 pal-schema-collect 0
-palschema-hub 2
+palschema-hub 3
 pnpm11-ci-guard 0
 porter 1
 rust-symbol-audit 1

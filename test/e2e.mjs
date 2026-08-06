@@ -125,6 +125,11 @@ const env = { GROK_API_KEY: 'xai-test-key', GROK_BASE_URL: `http://127.0.0.1:${p
   check('json -> schema fields present', parsed && parsed.tool === 'grokscope' && parsed.command === 'ask' && parsed.searchWindowDays === 30 && typeof parsed.content === 'string');
   check('json -> citations with postedAt + recency', parsed && parsed.citations.length >= 3 && parsed.citations.every((c) => /^https:\/\/x\.com\//.test(c.url)) && parsed.citations[0].postedAt && parsed.citations[0].recency, JSON.stringify(parsed?.citations?.[0]));
   check('json -> usage with estimated cost', parsed && parsed.usage.estimatedCostUsd > 0, JSON.stringify(parsed?.usage));
+  check(
+    'json -> resolved costUsd + costExact flag present',
+    parsed && typeof parsed.usage.costUsd === 'number' && typeof parsed.usage.costExact === 'boolean',
+    JSON.stringify(parsed?.usage),
+  );
 }
 
 // 7. --md mode
@@ -514,6 +519,146 @@ await mock.close();
   const h = await runCli(['history'], cenv);
   check('history -> empty after cache clear', /No cached results yet/.test(h.stdout), h.stdout);
   await cm.close();
+}
+
+// 25. exact billed cost (1.4.0): usage.cost_in_usd_ticks is xAI's actual billed
+// amount (tokens + server-side tool calls, after cache discounts). The parser,
+// the resolver, the JSON schema, the stderr line, and both replay paths must all
+// prefer it — and fall back to the estimate when it is absent or malformed.
+{
+  // Unit-level: the 10^10 divisor must not silently rot (docs example: 158500
+  // ticks = $0.00001585 — also why renderJson rounds to 8 decimals, not 6).
+  const grok = await import(new URL('../dist/grok.js', import.meta.url).href);
+  const fmt = await import(new URL('../dist/formatter.js', import.meta.url).href);
+  const u = (usage) => grok.parseResponse({ usage }).usage;
+  check(
+    'ticks -> unit conversion: 158500 ticks = $0.00001585',
+    grok.TICKS_PER_USD === 10_000_000_000 && u({ cost_in_usd_ticks: 158500 }).costUsd === 0.00001585,
+    JSON.stringify(u({ cost_in_usd_ticks: 158500 })),
+  );
+  check('ticks -> zero is a real exact $0, not missing', u({ cost_in_usd_ticks: 0 }).costUsd === 0);
+  check('ticks -> negative value never coerced', u({ cost_in_usd_ticks: -5 }).costUsd === undefined);
+  check('ticks -> string value never coerced', u({ cost_in_usd_ticks: '158500' }).costUsdTicks === undefined);
+  check('ticks -> null/absent leaves both undefined', u({ cost_in_usd_ticks: null }).costUsd === undefined && u({}).costUsdTicks === undefined);
+  check(
+    'resolveCost -> prefers exact, falls back to estimate',
+    fmt.resolveCost({ costUsd: 0.1975, inputTokens: 68000, outputTokens: 2821 }, 'grok-4.5').usd === 0.1975 &&
+      fmt.resolveCost({ costUsd: 0.1975 }, 'grok-4.5').exact === true &&
+      fmt.resolveCost({ inputTokens: 68000, outputTokens: 2821 }, 'grok-4.5').exact === false &&
+      fmt.resolveCost({ inputTokens: 68000, outputTokens: 2821 }, 'grok-4.5').usd === 0.152926,
+  );
+
+  // CLI-level, ticks present (mock default: 61,200,000 ticks = $0.00612 exact
+  // vs a $0.00488 token estimate — the gap is the x_search tool spend).
+  const em = createMockServer();
+  const eport = await em.listen();
+  const eenv = {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${eport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'exact-home'),
+  };
+  const r = await runCli(['ask', 'exact cost probe', '--json'], eenv);
+  let p = null;
+  try { p = JSON.parse(r.stdout); } catch {}
+  check('exact -> --json costUsd from ticks, costExact true', p?.usage.costUsd === 0.00612 && p?.usage.costExact === true, JSON.stringify(p?.usage));
+  check('exact -> estimatedCostUsd keeps its old meaning and value', p?.usage.estimatedCostUsd === 0.00488, JSON.stringify(p?.usage));
+  check('exact -> stderr prints "$ billed", no tilde, no hedge', /\$0\.0061 billed/.test(r.stderr) && !/~\$/.test(r.stderr) && !/estimated/.test(r.stderr), r.stderr);
+
+  // Cache replay: the ticks travel with the raw body, so the hit prints the
+  // identical exact line the live run did (acceptance #5, offline).
+  const replay = await runCli(['ask', 'exact cost probe', '--json'], eenv);
+  let p2 = null;
+  try { p2 = JSON.parse(replay.stdout); } catch {}
+  check(
+    'exact -> cache replay prints the identical billed line, still exact',
+    /from cache/.test(replay.stderr) && /\$0\.0061 billed/.test(replay.stderr) && p2?.usage.costUsd === 0.00612 && p2?.usage.costExact === true,
+    replay.stderr,
+  );
+  const hist = await runCli(['history', '1', '--json'], eenv);
+  let hp = null;
+  try { hp = JSON.parse(hist.stdout); } catch {}
+  check(
+    'exact -> history <n> reports the same exact figure',
+    hp?.usage.costUsd === 0.00612 && hp?.usage.costExact === true && /\$0\.0061 billed/.test(hist.stderr),
+    `${JSON.stringify(hp?.usage)} ${hist.stderr}`,
+  );
+  await em.close();
+
+  // Field absent (proxy / pre-ticks response / pre-1.4.0 cache entry).
+  const om = createMockServer({ omitCostTicks: true });
+  const oport = await om.listen();
+  const oenv = {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${oport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'omit-home'),
+  };
+  const or_ = await runCli(['ask', 'no ticks probe', '--json'], oenv);
+  let op = null;
+  try { op = JSON.parse(or_.stdout); } catch {}
+  check(
+    'no ticks -> costExact false, costUsd equals estimatedCostUsd',
+    op?.usage.costExact === false && op?.usage.costUsd === op?.usage.estimatedCostUsd && op?.usage.costUsd === 0.00488,
+    JSON.stringify(op?.usage),
+  );
+  check('no ticks -> stderr keeps the tilde + (estimated)', /~\$0\.0049 \(estimated\)/.test(or_.stderr) && !/billed/.test(or_.stderr), or_.stderr);
+  const orep = await runCli(['ask', 'no ticks probe'], oenv);
+  check(
+    'no ticks -> cache replay of a ticks-less entry falls back cleanly',
+    orep.code === 0 && /from cache/.test(orep.stderr) && /~\$0\.0049 \(estimated\)/.test(orep.stderr),
+    orep.stderr,
+  );
+  await om.close();
+
+  // Ticks present but GROK_MODEL unknown to the rate table: 1.3.0 printed no
+  // dollar figure at all here — the exact field now populates costUsd anyway.
+  const um = createMockServer({ expectModel: 'some-unreleased-model' });
+  const uport = await um.listen();
+  const uenv = {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${uport}/v1`,
+    GROK_MODEL: 'some-unreleased-model',
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'unknown-model-home'),
+  };
+  const ur = await runCli(['ask', 'unknown model probe', '--json'], uenv);
+  let up = null;
+  try { up = JSON.parse(ur.stdout); } catch {}
+  check(
+    'unknown model + ticks -> numeric costUsd even with no estimatedCostUsd',
+    up?.usage.costUsd === 0.00612 && up?.usage.costExact === true && !('estimatedCostUsd' in (up?.usage ?? {})),
+    JSON.stringify(up?.usage),
+  );
+  check('unknown model + ticks -> dollar figure on stderr (1.3.0 printed none)', /\$0\.0061 billed/.test(ur.stderr), ur.stderr);
+  await um.close();
+
+  // cost_in_usd_ticks: 0 -> a real $0.0000, exact — not treated as missing.
+  const zm = createMockServer({ costTicks: 0 });
+  const zport = await zm.listen();
+  const zr = await runCli(['ask', 'zero ticks probe', '--json'], {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${zport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'zero-home'),
+  });
+  let zp = null;
+  try { zp = JSON.parse(zr.stdout); } catch {}
+  check('zero ticks -> $0.0000 billed, exact', zp?.usage.costUsd === 0 && zp?.usage.costExact === true && /\$0\.0000 billed/.test(zr.stderr), `${JSON.stringify(zp?.usage)} ${zr.stderr}`);
+  await zm.close();
+
+  // Non-numeric ticks -> ignored, clean fallback (never coerce, never crash).
+  const nm = createMockServer({ costTicks: 'not-a-number' });
+  const nport = await nm.listen();
+  const nr = await runCli(['ask', 'bad ticks probe', '--json'], {
+    GROK_API_KEY: 'xai-test-key',
+    GROK_BASE_URL: `http://127.0.0.1:${nport}/v1`,
+    GROKSCOPE_HOME: path.join(TMP_HOME, 'badticks-home'),
+  });
+  let np = null;
+  try { np = JSON.parse(nr.stdout); } catch {}
+  check(
+    'non-numeric ticks -> ignored, falls back to the estimate',
+    nr.code === 0 && np?.usage.costExact === false && np?.usage.costUsd === np?.usage.estimatedCostUsd && /~\$0\.0049 \(estimated\)/.test(nr.stderr),
+    `${JSON.stringify(np?.usage)} ${nr.stderr}`,
+  );
+  await nm.close();
 }
 
 const failed = results.filter((r) => !r.pass).length;

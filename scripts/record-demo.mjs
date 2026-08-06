@@ -96,10 +96,13 @@ for (const d of DEMOS) {
   };
   writeFileSync(`${outDir}${d.name}.json`, `${JSON.stringify(fixture, null, 2)}\n`);
   const usage = response.usage ?? {};
+  // Prefer the exact billed figure (1 USD = 10^10 ticks); estimate as fallback.
   const cost =
-    usage.input_tokens && usage.output_tokens
-      ? ` (~$${((usage.input_tokens * 2 + usage.output_tokens * 6) / 1_000_000).toFixed(4)})`
-      : '';
+    typeof usage.cost_in_usd_ticks === 'number' && usage.cost_in_usd_ticks >= 0
+      ? ` ($${(usage.cost_in_usd_ticks / 1e10).toFixed(4)} billed)`
+      : usage.input_tokens && usage.output_tokens
+        ? ` (~$${((usage.input_tokens * 2 + usage.output_tokens * 6) / 1_000_000).toFixed(4)} estimated)`
+        : '';
   console.log(`  wrote demo/${d.name}.json${cost}`);
 }
 console.log('\nDone. Commit demo/*.json and ship. Try it:  node dist/cli.js demo --all');

@@ -39,7 +39,7 @@ npx grokscope demo --all    # ask + compare + trending
 
 ## Setup (2 minutes)
 
-1. **Get an API key** at [console.x.ai](https://console.x.ai), then **add credits to your team** — a brand-new team starts with none, and every call returns `403` until you do. (Grok 4.5 is $2/M input, $6/M output tokens. Budget **~$0.15–$0.30 per query** — `x_search` pulls dozens of real posts into context, so a run measures 70k–140k tokens. GrokScope prints the cost after every run.) If anything is off, `grokscope doctor` tells you which of these it is, for free.
+1. **Get an API key** at [console.x.ai](https://console.x.ai), then **add credits to your team** — a brand-new team starts with none, and every call returns `403` until you do. (Grok 4.5 is $2/M input, $6/M output tokens. Budget **~$0.15–$0.30 per query** — `x_search` pulls dozens of real posts into context, so a run measures 70k–140k tokens. GrokScope prints the **exact billed cost** after every run, straight from the API's own `cost_in_usd_ticks` field.) If anything is off, `grokscope doctor` tells you which of these it is, for free.
 2. **Set the key** (GrokScope also accepts the standard `XAI_API_KEY`):
    ```powershell
    # PowerShell
@@ -77,14 +77,14 @@ npx grokscope demo --all    # ask + compare + trending
 - `--exclude someuser` — exclude handles (cannot be combined with `--handles`)
 - `--days 14` — override the search window (prompt and search filter stay in sync)
 - `--images` / `--videos` — let Grok analyze media inside posts
-- `--json` — stable machine-readable output: content, numbered citations with `postedAt`/`recency`, source URLs, token usage with `estimatedCostUsd`. Built for CI jobs and dashboards.
+- `--json` — stable machine-readable output: content, numbered citations with `postedAt`/`recency`, source URLs, and token usage with `costUsd` + `costExact` (`costExact: true` means `costUsd` is xAI's exact billed amount from `cost_in_usd_ticks` — tool calls and cache discounts included; `false` means it's the token-rate estimate). `estimatedCostUsd` keeps its pre-1.4.0 meaning for existing consumers. Built for CI jobs and dashboards.
 - `--md` — clean markdown with an ISO-dated `## Sources` section. Built for pasting into newsletters and docs (`>> newsletter.md`).
 - `--fresh` — bypass the cache and fetch a fresh result (and overwrite the cached copy).
 - `--max-age <hours>` — ignore cached results older than this many hours (default `24`).
 
 ## Caching & history
 
-Every successful query is cached under `GROKSCOPE_HOME` (default `~/.grokscope`), keyed by a hash of the request (model + prompt + search window). An **identical repeat** — including the same query re-rendered as `--json` or `--md` — is served from disk for free, with a dim `(from cache)` note and no cost line. Use `--fresh` to force a live call, or `--max-age <hours>` to control how stale a hit may be.
+Every successful query is cached under `GROKSCOPE_HOME` (default `~/.grokscope`), keyed by a hash of the request (model + prompt + search window). An **identical repeat** — including the same query re-rendered as `--json` or `--md` — is served from disk for free, with a dim `(from cache)` note; it re-prints the original run's cost line (the exact billed figure travels with the cached response). Use `--fresh` to force a live call, or `--max-age <hours>` to control how stale a hit may be.
 
 ```bash
 grokscope history        # list recent cached results (index, command, date, query)
@@ -149,18 +149,18 @@ One POST to xAI's `/v1/responses` endpoint with the server-side `x_search` tool 
 ```bash
 npm install
 npm run build        # tsc -> dist/
-npm run test:e2e     # 101 checks against a doc-accurate local mock of /v1/responses
+npm run test:e2e     # 120 checks against a doc-accurate local mock of /v1/responses
 npm run verify:live  # the 3 acceptance queries against the REAL API (needs GROK_API_KEY, ~$0.60)
 npm pack             # build the distributable tarball
 ```
 
-After each query the CLI prints a dim cost line to stderr (`70,821 tokens · ~$0.1520` — a real measured run) so BYOK users always know what they're spending. Note it is an estimate from the published per-model rates ($2/$6-per-M for grok-4.5), not xAI billing; console.x.ai is the source of truth. If you point `GROK_MODEL` at a model with no published rate here, the token count still prints but the dollar figure is omitted rather than guessed. Shipping checklist lives in `SHIP.md`.
+After each query the CLI prints a dim cost line to stderr so BYOK users always know what they're spending. When the API returns `usage.cost_in_usd_ticks` (direct xAI calls do), the figure is **exact** — xAI's actual billed amount, inclusive of the server-side `x_search` calls ($5 per 1,000, billed separately from tokens) and prompt-caching discounts — and prints without a hedge: `70,821 tokens · $0.1975 billed`. If the field is missing (a proxy, an older recorded response, the offline mock), the line falls back to the published per-model token rates and says so: `70,821 tokens · ~$0.1529 (estimated)`; with a `GROK_MODEL` that has no published rate *and* no ticks, the token count still prints but the dollar figure is omitted rather than guessed. Cache hits and `grokscope history <n>` re-print the original run's figure. Shipping checklist lives in `SHIP.md`.
 
 `test/mock-server.mjs` mimics the xAI Responses API (including request-schema validation and realistic snowflake post IDs), so the full CLI pipeline is testable offline: `node test/mock-server.mjs` starts it standalone for manual demos.
 
 ## Contributing
 
-Issues and PRs welcome. The whole pipeline is testable offline (`npm run test:e2e` — 101 checks against a doc-accurate mock of xAI's `/v1/responses`), so you don't need an API key to hack on it. Good first contributions: new command modes (e.g. a `quotes` mode that surfaces the most-shared verbatim takes), output formats, shell completions, or a scheduled `watch run` recipe for GitHub Actions.
+Issues and PRs welcome. The whole pipeline is testable offline (`npm run test:e2e` — 120 checks against a doc-accurate mock of xAI's `/v1/responses`), so you don't need an API key to hack on it. Good first contributions: new command modes (e.g. a `quotes` mode that surfaces the most-shared verbatim takes), output formats, shell completions, or a scheduled `watch run` recipe for GitHub Actions.
 
 ## License
 

@@ -21,9 +21,9 @@ export function xUrl(handle, daysAgo) {
   return `https://x.com/${handle}/status/${id}`;
 }
 
-function validateRequest(body) {
+function validateRequest(body, expectModel = 'grok-4.5') {
   const errors = [];
-  if (body.model !== 'grok-4.5') errors.push(`model must be 'grok-4.5', got ${body.model}`);
+  if (body.model !== expectModel) errors.push(`model must be '${expectModel}', got ${body.model}`);
   if (typeof body.instructions !== 'string' || !body.instructions)
     errors.push('instructions (system prompt) missing');
   if (!Array.isArray(body.input) || !body.input.length) errors.push('input array missing');
@@ -223,7 +223,7 @@ export function createMockServer(opts = {}) {
     req.on('end', () => {
       const body = JSON.parse(raw);
       requests.push(body);
-      const errors = validateRequest(body);
+      const errors = validateRequest(body, opts.expectModel);
       if (errors.length) {
         res.writeHead(400, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ error: { message: `schema violations: ${errors.join('; ')}` } }));
@@ -236,6 +236,26 @@ export function createMockServer(opts = {}) {
         return;
       }
       const { text, urls } = opts.outOfOrderCitations ? outOfOrderAnswer() : answerFor(body.input[0].content);
+      // usage.cost_in_usd_ticks — the exact billed amount (1 USD = 10^10 ticks),
+      // inclusive of the x_search tool calls the token estimate cannot see, per
+      // https://docs.x.ai/developers/cost-tracking. Both branches are exercised
+      // offline: opts.omitCostTicks (or MOCK_OMIT_COST_TICKS=1 standalone)
+      // drops the field, like a proxy or a pre-ticks response would;
+      // opts.costTicks overrides the value (0 and non-numeric are valid probes).
+      const omitTicks = opts.omitCostTicks ?? process.env.MOCK_OMIT_COST_TICKS === '1';
+      const usage = {
+        input_tokens: 1180,
+        output_tokens: 420,
+        total_tokens: 1600,
+        num_sources_used: urls.length,
+        ...(omitTicks
+          ? {}
+          : {
+              num_server_side_tools_used: urls.length,
+              server_side_tool_usage_details: { x_search_calls: urls.length, web_search_calls: 0 },
+              cost_in_usd_ticks: opts.costTicks ?? 61_200_000, // $0.00612
+            }),
+      };
       const payload = {
         id: 'resp_mock_001',
         object: 'response',
@@ -251,7 +271,7 @@ export function createMockServer(opts = {}) {
           },
         ],
         citations: urls,
-        usage: { input_tokens: 1180, output_tokens: 420, total_tokens: 1600, num_sources_used: urls.length },
+        usage,
       };
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify(payload));

@@ -4,7 +4,7 @@
  *
  *   npm run verify:live
  *
- * Expected total cost: a few cents (3 queries at grok-4.5 rates).
+ * Expected total cost: ~$0.60 (3 queries; measured 2026-07-16 at $0.16-$0.29 each).
  */
 
 import { spawn } from 'node:child_process';
@@ -59,6 +59,9 @@ console.log('1/3  grokscope ask "bun vs node in 2026"  (30-day window, ~1-3 min)
   check('ask -> exit 0', r.code === 0, r.stderr);
   check('ask -> at least one cited X post URL', X_POST.test(r.stdout), r.stdout);
   check('ask -> Community Verdict section', /community verdict/i.test(r.stdout), r.stdout.slice(-600));
+  // The real API returns usage.cost_in_usd_ticks, so the cost line must be the
+  // exact billed figure ("$0.1975 billed"), not the hedged estimate.
+  check('ask -> exact billed cost line on stderr', /\$[\d.]+ billed/.test(r.stderr), r.stderr.slice(-200));
   console.log(`      ${r.stderr.trim().split('\n').at(-1) ?? ''}`); // cost line
 }
 

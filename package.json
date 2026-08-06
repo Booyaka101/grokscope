@@ -1,6 +1,6 @@
 {
   "name": "grokscope",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Real-time developer community intelligence from X — powered by Grok 4.5's native X search tool. Ask, compare, and track what developers are actually saying.",
   "type": "module",
   "bin": {
@@ -10,6 +10,7 @@
     "dist",
     "demo",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {

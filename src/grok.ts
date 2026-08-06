@@ -36,7 +36,21 @@ export interface GrokResult {
   citations: Citation[];
   /** Every source URL the agent encountered (top-level `citations` field). */
   allSourceUrls: string[];
-  usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+    /** xAI's exact billed amount in USD ticks (1 USD = 10^10 ticks) — see TICKS_PER_USD. */
+    costUsdTicks?: number;
+    /**
+     * costUsdTicks / 10^10: the actual amount billed, after all discounts
+     * (including prompt caching) and inclusive of all token costs AND
+     * server-side tool invocations (x_search at $5/1k calls), per
+     * https://docs.x.ai/developers/cost-tracking. Undefined when the API
+     * (or a proxy / an old cached response) did not return the field.
+     */
+    costUsd?: number;
+  };
   /** The API set `status: incomplete` (e.g. token limit) — content may be partial. */
   incomplete: boolean;
 }
@@ -62,6 +76,9 @@ export class GrokApiError extends Error {
     this.name = 'GrokApiError';
   }
 }
+
+/** 1 USD = 10,000,000,000 cost ticks (https://docs.x.ai/developers/cost-tracking). */
+export const TICKS_PER_USD = 10_000_000_000;
 
 const DEFAULT_BASE_URL = 'https://api.x.ai/v1';
 const DEFAULT_MODEL = 'grok-4.5';
@@ -328,10 +345,19 @@ export function parseResponse(data: Record<string, unknown>): GrokResult {
   }
 
   const usageRaw = (data.usage ?? {}) as Record<string, unknown>;
+  // Only a finite non-negative number counts as a real tick figure — a missing,
+  // null, string or negative value leaves both fields undefined (never coerce).
+  const ticksRaw = usageRaw.cost_in_usd_ticks;
+  const costUsdTicks =
+    typeof ticksRaw === 'number' && Number.isFinite(ticksRaw) && ticksRaw >= 0
+      ? ticksRaw
+      : undefined;
   const usage = {
     inputTokens: typeof usageRaw.input_tokens === 'number' ? usageRaw.input_tokens : undefined,
     outputTokens: typeof usageRaw.output_tokens === 'number' ? usageRaw.output_tokens : undefined,
     totalTokens: typeof usageRaw.total_tokens === 'number' ? usageRaw.total_tokens : undefined,
+    costUsdTicks,
+    costUsd: costUsdTicks === undefined ? undefined : costUsdTicks / TICKS_PER_USD,
   };
 
   return {

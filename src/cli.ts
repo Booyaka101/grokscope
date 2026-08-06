@@ -29,12 +29,12 @@ import {
   daysAgoISO,
   WINDOW_DAYS,
 } from './prompts.js';
-import { renderResult, renderMarkdownDoc, renderJson, estimateCostUsd } from './formatter.js';
+import { renderResult, renderMarkdownDoc, renderJson, resolveCost } from './formatter.js';
 import { runDemo, DEMO_NAMES, type DemoName } from './demo.js';
 import * as cache from './cache.js';
 import * as watch from './watch.js';
 
-const VERSION = '1.3.0';
+const VERSION = '1.4.0';
 // A new xAI team starts with zero credits and 403s on every call, so getting a
 // key is only half the setup — say so here rather than letting the first call fail.
 const GET_KEY_MSG =
@@ -178,15 +178,23 @@ function renderOutput(result: GrokResult, opts: SharedOpts, meta: RunMeta, model
   process.stdout.write(opts.md ? renderMarkdownDoc(result) : renderResult(result));
 }
 
-/** BYOK transparency: estimate what this query cost. Tokens are the API's own
- * count; rates come from a per-model table (finding #5) — an unknown GROK_MODEL
- * omits the dollar figure rather than misreporting it. console.x.ai is the truth. */
+/** BYOK transparency: what this query cost. When the API returned
+ * cost_in_usd_ticks the figure is exact — xAI's actual billed amount, tool
+ * calls and cache discounts included — and prints without a hedge
+ * ("$0.1975 billed"). Otherwise it falls back to the per-model rate table
+ * ("~$0.1529 (estimated)"); an unknown GROK_MODEL with no ticks omits the
+ * dollar figure rather than misreporting it. */
 function printCostLine(model: string, result: GrokResult): void {
   const { inputTokens, outputTokens } = result.usage ?? {};
   if (inputTokens === undefined || outputTokens === undefined) return;
-  const usd = estimateCostUsd(model, inputTokens, outputTokens);
+  const { usd, exact } = resolveCost(result.usage, model);
   const total = (inputTokens + outputTokens).toLocaleString();
-  const line = usd !== undefined ? `${total} tokens · ~$${usd.toFixed(4)}` : `${total} tokens`;
+  const line =
+    usd === undefined
+      ? `${total} tokens`
+      : exact
+        ? `${total} tokens · $${usd.toFixed(4)} billed`
+        : `${total} tokens · ~$${usd.toFixed(4)} (estimated)`;
   process.stderr.write(`${stderrDim(line)}\n`);
 }
 
@@ -207,7 +215,12 @@ async function run(system: string, user: string, opts: SharedOpts, meta: RunMeta
   if (!opts.fresh) {
     const hit = cache.get(key, resolveMaxAgeMs(opts));
     if (hit) {
-      renderOutput(parseResponse(hit.response), opts, meta, model);
+      const cached = parseResponse(hit.response);
+      renderOutput(cached, opts, meta, model);
+      // The cached raw body carries the original run's cost_in_usd_ticks, so a
+      // hit reports the same exact figure the live run printed (the hit itself
+      // costs nothing — the note on the next line says so).
+      printCostLine(model, cached);
       process.stderr.write(`${stderrDim('(from cache — run with --fresh to refresh)')}\n`);
       return;
     }
@@ -645,12 +658,15 @@ program
       process.exit(1);
     }
     const entry = entries[n - 1]!;
+    const replayed = parseResponse(entry.response);
     renderOutput(
-      parseResponse(entry.response),
+      replayed,
       opts,
       { command: entry.meta.command, query: entry.meta.query, days: entry.meta.days },
       entry.meta.model,
     );
+    // Same exact billed figure as the original run (ticks travel with the raw body).
+    printCostLine(entry.meta.model, replayed);
   });
 
 function formatBytes(n: number): string {

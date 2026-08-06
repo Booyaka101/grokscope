@@ -5,6 +5,12 @@
  * cost nothing: the raw API body is keyed by a sha256 of the canonical request
  * and re-parsed through the same `parseResponse` + formatter as a live run.
  *
+ * Because the WHOLE raw body is stored, `usage.cost_in_usd_ticks` persists with
+ * the token counts automatically — a cache hit and `history <n>` report the same
+ * exact billed figure the live run printed. An entry whose body has no ticks
+ * (recorded via a proxy, or before xAI shipped the field) simply parses to an
+ * undefined costUsd and falls back to the estimate; no migration needed.
+ *
  * Layout:  <GROKSCOPE_HOME>/cache/<key>.json   (default home: ~/.grokscope)
  * Only Node builtins — no native deps, no SQLite.
  */

@@ -43,7 +43,7 @@ jobs:
         run: npx --yes npm-script-lens@latest audit --path . --cooldown
 
       - name: TypeScript 7 readiness
-        uses: Booyaka101/ts7-compat-guard@v2
+        uses: Booyaka101/ts7-compat-guard@v3
 
       # Drift gate: fails if a dependency gains an install script that nobody has
       # approved. The allowlist is only worth having if it is enforced.

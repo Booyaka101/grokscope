@@ -22,7 +22,7 @@ grok-loop-kit 0
 grokscope 0
 mcp-app-debug 0
 mcp-vet 0
-npm-script-lens 0
+npm-script-lens 1
 pal-schema-collect 0
 palschema-hub 3
 pmpt-eject 0

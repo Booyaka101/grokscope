@@ -3,7 +3,7 @@ CCTracker 0
 FirstLogin 0
 FirstLoginV2 0
 Scrap 0
-agentscript-nvim 0
+agentscript-nvim 1
 booyaka.github.io 0
 caps-brief 0
 cargo-witness 0
@@ -36,4 +36,4 @@ studio-os 0
 thedailyfable 0
 ts7-compat-guard 0
 wp-schema-automator 0
-TOTALS 2 4
+TOTALS 2 3

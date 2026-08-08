@@ -20,6 +20,7 @@ gemcatch 0
 ghas-free-pack 0
 grok-loop-kit 0
 grokscope 0
+hass-breakage-radar 0
 mcp-app-debug 0
 mcp-vet 0
 npm-script-lens 1
@@ -35,5 +36,4 @@ shopify-upseller 0
 studio-os 0
 thedailyfable 0
 ts7-compat-guard 0
-wp-schema-automator 0
 TOTALS 1 3

@@ -7,6 +7,7 @@ agentscript-nvim 2
 booyaka.github.io 0
 caps-brief 0
 cargo-witness 0
+comfy-import-guard 0
 comfyui-node-safety-check 0
 comfyui-node-safety-test-fixtures 0
 comfyui-vlm-gates 0
@@ -20,7 +21,7 @@ gemcatch 0
 ghas-free-pack 0
 grok-loop-kit 0
 grokscope 0
-hass-breakage-radar 9
+hass-breakage-radar 10
 mcp-app-debug 0
 mcp-vet 0
 npm-script-lens 1

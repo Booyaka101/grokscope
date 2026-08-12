@@ -21,7 +21,7 @@ gemcatch 0
 ghas-free-pack 0
 grok-loop-kit 0
 grokscope 0
-hass-breakage-radar 10
+hass-breakage-radar 11
 mcp-app-debug 0
 mcp-vet 0
 npm-script-lens 1

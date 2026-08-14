@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: xAI API documentation
+    url: https://docs.x.ai/
+    about: Model behaviour, quotas and pricing are xAI's, not this tool's.
+  - name: Get an xAI API key
+    url: https://console.x.ai/
+    about: grokscope needs an `XAI_API_KEY`. Everything except `demo` requires one.
+  - name: Security issue
+    url: https://github.com/Booyaka101/grokscope/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.

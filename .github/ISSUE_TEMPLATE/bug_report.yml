@@ -1,0 +1,49 @@
+name: Bug report
+description: Something didn't work the way it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please **never paste your `XAI_API_KEY`** — check any command output you copy in here for it first.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, and what came back.
+      placeholder: |
+        $ grokscope ask "bun vs node in 2026"
+        Error: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: grokscope version
+      description: Output of `grokscope --version`
+    validations:
+      required: true
+
+  - type: input
+    id: runtime
+    attributes:
+      label: Node version and OS
+      description: Output of `node --version`, plus your OS.
+      placeholder: v22.18.0 on Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: textarea
+    id: offline
+    attributes:
+      label: Does `grokscope demo` reproduce it?
+      description: "`demo` replays a recorded response with no network and no key. If it fails there too, the bug is in this tool rather than in the API."

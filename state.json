@@ -22,7 +22,7 @@ grok-loop-kit 1
 grokscope 0
 hass-breakage-radar 14
 mcp-app-debug 0
-mcp-vet 0
+mcp-vet 1
 npm-install-census 0
 npm-script-lens 1
 pal-schema-collect 0

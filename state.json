@@ -33,7 +33,7 @@ mcp-vet 1
 npm-install-census 0
 npm-script-lens 1
 pal-schema-collect 0
-palschema-hub 3
+palschema-hub 4
 pmpt-eject 0
 pnpm11-ci-guard 0
 porter 1

@@ -16,6 +16,7 @@ comfyui-node-safety-test-fixtures 0
 comfyui-vlm-gates 0
 comfyui-workflow-rescue 0
 cse-bridge 0
+diskstack 0
 dynamic-jobs-economy 0
 economy-guardian 0
 eslint10-matrix 1
@@ -48,4 +49,4 @@ uv-cache-warden 2
 vaseweld 3
 wow-secret-lint 1
 wp-schema-automator 0
-TOTALS 1 2
+TOTALS 3 2

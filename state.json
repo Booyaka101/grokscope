@@ -28,6 +28,7 @@ grok-loop-kit 0
 grokscope 1
 grooveclean 0
 hass-breakage-radar 20
+manyhands 0
 mcp-app-debug 0
 mcp-vet 1
 npm-install-census 0

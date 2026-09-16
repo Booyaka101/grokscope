@@ -44,7 +44,7 @@ runner-drift 0
 rust-symbol-audit 1
 rust-symbol-audit-demo 0
 shopify-upseller 0
-studio-os 0
+studio-os 1
 thedailyfable 0
 ts7-compat-guard 1
 unjxld 0
@@ -52,4 +52,4 @@ uv-cache-warden 2
 vaseweld 3
 wow-secret-lint 1
 wp-schema-automator 0
-TOTALS 3 2
+TOTALS 3 3

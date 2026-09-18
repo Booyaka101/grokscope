@@ -39,6 +39,7 @@ palschema-hub 4
 pmpt-eject 0
 pnpm11-ci-guard 0
 porter 1
+readalign 0
 rimpatch 0
 runner-drift 0
 rust-symbol-audit 1
@@ -51,5 +52,4 @@ unjxld 0
 uv-cache-warden 2
 vaseweld 3
 wow-secret-lint 1
-wp-schema-automator 0
 TOTALS 3 2

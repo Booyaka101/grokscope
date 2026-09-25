@@ -141,14 +141,29 @@ export function renderMarkdownDoc(result: GrokResult): string {
 //
 // This table is the FALLBACK, not the primary figure: it hardcodes the
 // sub-200k-token tier, ignores the $0.30/M cached-input rate, and cannot see
-// server-side tool spend (x_search bills $5/1k calls separately from tokens),
-// so it is wrong in both directions — up to ~20% on real runs. The API's own
+// server-side tool spend (X Search is billed per post and per profile fetched,
+// separately from tokens), so it is wrong in both directions. The API's own
 // usage.cost_in_usd_ticks (parsed in grok.ts) is exact; this estimate remains
 // for proxies, older cached responses and the offline mock.
 const MODEL_RATES: Record<string, [number, number]> = {
   'grok-4.5': [2, 6],
   'grok-4.5-latest': [2, 6],
 };
+
+// X Search list prices from 2026-09-21: $5 per 1k posts, $10 per 1k user
+// profiles (https://docs.x.ai/developers/tools/x-search).
+const X_POST_USD = 0.005;
+const X_USER_USD = 0.01;
+
+/**
+ * X Search's share of the bill at list price, from the fetch counts the API
+ * reports. Undefined when the response carried no posts count.
+ */
+export function xSearchCostUsd(usage: GrokResult['usage']): number | undefined {
+  const { xPostsFetched, xUsersFetched = 0 } = usage ?? {};
+  if (xPostsFetched === undefined) return undefined;
+  return xPostsFetched * X_POST_USD + xUsersFetched * X_USER_USD;
+}
 
 /** Estimated USD cost, or undefined if we have no published rate for the model. */
 export function estimateCostUsd(
@@ -186,13 +201,14 @@ export interface JsonMeta {
 /** --json: stable machine-readable schema (for CI, scripts, dashboards).
  * `extra` lets a command add its own top-level fields (e.g. watch deltas). */
 export function renderJson(result: GrokResult, meta: JsonMeta, extra?: Record<string, unknown>): string {
-  const { inputTokens, outputTokens, totalTokens } = result.usage ?? {};
-  const rawCost = estimateCostUsd(meta.model, inputTokens, outputTokens);
-  const estimatedCostUsd = rawCost === undefined ? undefined : Number(rawCost.toFixed(6));
+  const { inputTokens, outputTokens, totalTokens, xPostsFetched, xUsersFetched } = result.usage ?? {};
+  const round = (n: number | undefined, digits: number) =>
+    n === undefined ? undefined : Number(n.toFixed(digits));
+  const estimatedCostUsd = round(estimateCostUsd(meta.model, inputTokens, outputTokens), 6);
   // 8 decimals, not 6: a single cheap call can be well under a cent
   // (158500 ticks is $0.00001585 — 6 decimals would round it to zero).
   const resolved = resolveCost(result.usage, meta.model);
-  const costUsd = resolved.usd === undefined ? undefined : Number(resolved.usd.toFixed(8));
+  const costUsd = round(resolved.usd, 8);
   const content = renumberInlineCitations(result.content, result.citations);
   return `${JSON.stringify(
     {
@@ -218,7 +234,17 @@ export function renderJson(result: GrokResult, meta: JsonMeta, extra?: Record<st
       allSourceUrls: result.allSourceUrls,
       // costUsd is the resolved figure (exact when costExact); estimatedCostUsd
       // keeps its pre-1.4.0 meaning and value so existing consumers don't break.
-      usage: { inputTokens, outputTokens, totalTokens, costUsd, costExact: resolved.exact, estimatedCostUsd },
+      usage: {
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        costUsd,
+        costExact: resolved.exact,
+        estimatedCostUsd,
+        xPostsFetched,
+        xUsersFetched,
+        xSearchCostUsd: round(xSearchCostUsd(result.usage), 8),
+      },
       ...(extra ?? {}),
     },
     null,

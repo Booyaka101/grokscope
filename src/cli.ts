@@ -29,12 +29,12 @@ import {
   daysAgoISO,
   WINDOW_DAYS,
 } from './prompts.js';
-import { renderResult, renderMarkdownDoc, renderJson, resolveCost } from './formatter.js';
+import { renderResult, renderMarkdownDoc, renderJson, resolveCost, xSearchCostUsd } from './formatter.js';
 import { runDemo, DEMO_NAMES, type DemoName } from './demo.js';
 import * as cache from './cache.js';
 import * as watch from './watch.js';
 
-const VERSION = '1.4.0';
+const VERSION = '1.5.0';
 // A new xAI team starts with zero credits and 403s on every call, so getting a
 // key is only half the setup — say so here rather than letting the first call fail.
 const GET_KEY_MSG =
@@ -179,23 +179,42 @@ function renderOutput(result: GrokResult, opts: SharedOpts, meta: RunMeta, model
 }
 
 /** BYOK transparency: what this query cost. When the API returned
- * cost_in_usd_ticks the figure is exact — xAI's actual billed amount, tool
- * calls and cache discounts included — and prints without a hedge
+ * cost_in_usd_ticks the figure is exact — xAI's actual billed amount, X
+ * Search and cache discounts included — and prints without a hedge
  * ("$0.1975 billed"). Otherwise it falls back to the per-model rate table
  * ("~$0.1529 (estimated)"); an unknown GROK_MODEL with no ticks omits the
- * dollar figure rather than misreporting it. */
+ * dollar figure rather than misreporting it. When the response reports X
+ * Search fetch counts, they follow with their list-price cost
+ * ("· X Search 184 posts, 3 profiles (~$0.95)"). */
 function printCostLine(model: string, result: GrokResult): void {
   const { inputTokens, outputTokens } = result.usage ?? {};
   if (inputTokens === undefined || outputTokens === undefined) return;
   const { usd, exact } = resolveCost(result.usage, model);
   const total = (inputTokens + outputTokens).toLocaleString();
-  const line =
+  let line =
     usd === undefined
       ? `${total} tokens`
-      : exact
-        ? `${total} tokens · $${usd.toFixed(4)} billed`
-        : `${total} tokens · ~$${usd.toFixed(4)} (estimated)`;
+      : `${total} tokens · ${costFigure(usd, exact)} ${exact ? 'billed' : '(estimated)'}`;
+  const xUsd = xSearchCostUsd(result.usage);
+  if (xUsd !== undefined) {
+    const { xPostsFetched = 0, xUsersFetched = 0 } = result.usage ?? {};
+    const counts = [plural(xPostsFetched, 'post')];
+    if (xUsersFetched > 0) counts.push(plural(xUsersFetched, 'profile'));
+    line += ` · X Search ${counts.join(', ')}`;
+    // A list-price share above the exact bill means a discount or credit we
+    // can't see, so the counts print without a figure that can't be right.
+    if (!(exact && usd !== undefined && xUsd > usd)) line += ` (~$${xUsd.toFixed(2)})`;
+  }
   process.stderr.write(`${stderrDim(line)}\n`);
+}
+
+/** "$0.1975" when exact, "~$0.1529" when estimated. */
+function costFigure(usd: number, exact: boolean): string {
+  return `${exact ? '' : '~'}$${usd.toFixed(4)}`;
+}
+
+function plural(n: number, noun: string): string {
+  return `${n.toLocaleString()} ${noun}${n === 1 ? '' : 's'}`;
 }
 
 async function run(system: string, user: string, opts: SharedOpts, meta: RunMeta): Promise<void> {
@@ -643,7 +662,11 @@ program
       console.log(`Cached results (${cache.grokscopeHome()}):\n`);
       entries.forEach((e, i) => {
         const when = e.meta.createdAt.slice(0, 10);
-        console.log(`  ${String(i + 1).padStart(2)}. ${e.meta.command.padEnd(8)} ${when}  ${e.meta.query}`);
+        const { usd, exact } = resolveCost(parseResponse(e.response).usage, e.meta.model);
+        const cost = usd === undefined ? '' : costFigure(usd, exact);
+        console.log(
+          `  ${String(i + 1).padStart(2)}. ${e.meta.command.padEnd(8)} ${when}  ${cost.padEnd(9)} ${e.meta.query}`,
+        );
       });
       console.log(`\nRe-print one for free:  grokscope history <index>`);
       return;

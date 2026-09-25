@@ -237,7 +237,7 @@ export function createMockServer(opts = {}) {
       }
       const { text, urls } = opts.outOfOrderCitations ? outOfOrderAnswer() : answerFor(body.input[0].content);
       // usage.cost_in_usd_ticks — the exact billed amount (1 USD = 10^10 ticks),
-      // inclusive of the x_search tool calls the token estimate cannot see, per
+      // inclusive of the X Search spend the token estimate cannot see, per
       // https://docs.x.ai/developers/cost-tracking. Both branches are exercised
       // offline: opts.omitCostTicks (or MOCK_OMIT_COST_TICKS=1 standalone)
       // drops the field, like a proxy or a pre-ticks response would;

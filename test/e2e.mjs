@@ -522,7 +522,7 @@ await mock.close();
 }
 
 // 25. exact billed cost (1.4.0): usage.cost_in_usd_ticks is xAI's actual billed
-// amount (tokens + server-side tool calls, after cache discounts). The parser,
+// amount (tokens + server-side tool spend, after cache discounts). The parser,
 // the resolver, the JSON schema, the stderr line, and both replay paths must all
 // prefer it — and fall back to the estimate when it is absent or malformed.
 {
@@ -676,14 +676,18 @@ await mock.close();
   check('fetch counts -> parsed from server_side_tool_usage_details', same(counts({ x_posts_fetched: 184, x_users_fetched: 0 }), [184, 0]));
   check(
     'fetch counts -> negative, fractional, string and null are ignored',
-    [-1, 1.5, '184', null].every((v) => same(counts({ x_posts_fetched: v, x_users_fetched: v }), [undefined, undefined])),
+    [-1, 1.5, '184', null, 1e24].every((v) => same(counts({ x_posts_fetched: v, x_users_fetched: v }), [undefined, undefined])),
   );
   check('fetch counts -> absent details block leaves both undefined', same(counts(undefined), [undefined, undefined]));
+  check('fetch counts -> non-object details block leaves both undefined', [null, 'x', 7].every((d) => same(counts(d), [undefined, undefined])));
+  check('fetch counts -> profiles need a valid posts count', same(counts({ x_posts_fetched: -4, x_users_fetched: 3 }), [undefined, undefined]));
+  check('fetch counts -> JSON -0 reads as 0', Object.is(counts(JSON.parse('{"x_posts_fetched":-0}'))[0], 0));
   check(
-    'xSearchCostUsd -> undefined without counts, missing count treated as 0',
+    'xSearchCostUsd -> undefined without a posts count, missing profiles treated as 0',
     fmt.xSearchCostUsd({}) === undefined &&
       fmt.xSearchCostUsd(undefined) === undefined &&
-      fmt.xSearchCostUsd({ xUsersFetched: 3 }) === 0.03 &&
+      fmt.xSearchCostUsd({ xUsersFetched: 3 }) === undefined &&
+      fmt.xSearchCostUsd({ xPostsFetched: 2 }) === 0.01 &&
       fmt.xSearchCostUsd({ xPostsFetched: 1000, xUsersFetched: 1000 }) === 15,
   );
 
@@ -730,6 +734,31 @@ await mock.close();
       costLine(hist.stderr) === WORKED && json(hist.stdout)?.usage.xSearchCostUsd === 0.95,
       hist.stderr,
     );
+    const list = await cli(['history']);
+    check("history -> list shows each run's billed total", /  1\. ask      \d{4}-\d\d-\d\d  \$1\.1240   x search cost probe/.test(list.stdout), list.stdout);
+  });
+
+  await withMock({ costTicks: 11_240_000_000 }, 'xsearch-watch-home', async (cli) => {
+    await cli(['watch', 'add', 'rust']);
+    const r = await cli(['watch', 'run', '--json']);
+    const u = json(r.stdout)?.usage;
+    check(
+      'x search -> watch run prints the breakdown and the --json fields',
+      costLine(r.stderr) === WORKED && u?.xPostsFetched === 184 && u?.xUsersFetched === 3 && u?.xSearchCostUsd === 0.95,
+      `${JSON.stringify(u)} ${r.stderr}`,
+    );
+  });
+
+  // The e2e mock's default bill ($0.0061) is below X Search's list price, as a
+  // discount or credit would make it: the counts stay, the figure goes.
+  await withMock({}, 'xsearch-overbill-home', async (cli) => {
+    const r = await cli(['ask', 'over bill probe', '--json']);
+    check(
+      'x search share above the exact bill -> counts without the figure',
+      costLine(r.stderr) === '1,600 tokens · $0.0061 billed · X Search 184 posts, 3 profiles' &&
+        json(r.stdout)?.usage.xSearchCostUsd === 0.95,
+      r.stderr,
+    );
   });
 
   // Counts absent (proxy, bodies cached by 1.4.0): exactly the 1.4.0 output.
@@ -748,6 +777,8 @@ await mock.close();
   await withMock({ omitFetchCounts: true, omitCostTicks: true }, 'proxy-home', async (cli) => {
     const r = await cli(['ask', 'proxy probe']);
     check('no counts, no ticks -> byte-identical 1.4.0 estimated line', costLine(r.stderr) === '1,600 tokens · ~$0.0049 (estimated)', r.stderr);
+    const list = await cli(['history']);
+    check('history -> list marks an estimated total with ~', /\d  ~\$0\.0049  proxy probe/.test(list.stdout), list.stdout);
   });
 
   await withMock({ omitCostTicks: true }, 'counts-noticks-home', async (cli) => {
@@ -759,7 +790,7 @@ await mock.close();
     );
   });
 
-  await withMock({ xUsersFetched: 0 }, 'zero-profiles-home', async (cli) => {
+  await withMock({ costTicks: 11_240_000_000, xUsersFetched: 0 }, 'zero-profiles-home', async (cli) => {
     const r = await cli(['ask', 'zero profiles probe']);
     check('zero profiles -> profile clause omitted', / · X Search 184 posts \(~\$0\.92\)$/.test(costLine(r.stderr)), r.stderr);
   });
@@ -768,17 +799,26 @@ await mock.close();
     check('zero counts -> "X Search 0 posts (~$0.00)"', / · X Search 0 posts \(~\$0\.00\)$/.test(costLine(r.stderr)), r.stderr);
     check('zero counts -> --json xSearchCostUsd is a real 0', json(r.stdout)?.usage.xSearchCostUsd === 0, r.stdout.slice(-300));
   });
-  await withMock({ xPostsFetched: 12_346, xUsersFetched: 1 }, 'plural-home', async (cli) => {
+  await withMock({ costTicks: 1_000_000_000_000, xPostsFetched: 12_346, xUsersFetched: 1 }, 'plural-home', async (cli) => {
     const r = await cli(['ask', 'plural probe']);
     check('counts -> singular noun and thousands separator', / · X Search 12,346 posts, 1 profile \(~\$61\.74\)$/.test(costLine(r.stderr)), r.stderr);
   });
 
-  await withMock({ xPostsFetched: -4, xUsersFetched: '3' }, 'bad-counts-home', async (cli) => {
+  await withMock({ xPostsFetched: -4, xUsersFetched: 3 }, 'bad-counts-home', async (cli) => {
     const r = await cli(['ask', 'bad counts probe', '--json']);
     const u = json(r.stdout)?.usage;
     check(
-      'invalid counts -> ignored on stderr and in --json',
-      r.code === 0 && costLine(r.stderr) === '1,600 tokens · $0.0061 billed' && u && !('xPostsFetched' in u) && !('xSearchCostUsd' in u),
+      'invalid posts count -> no segment and no X Search keys, even with valid profiles',
+      r.code === 0 && costLine(r.stderr) === '1,600 tokens · $0.0061 billed' && u && !('xPostsFetched' in u) && !('xUsersFetched' in u) && !('xSearchCostUsd' in u),
+      `${JSON.stringify(u)} ${r.stderr}`,
+    );
+  });
+  await withMock({ costTicks: 11_240_000_000, xUsersFetched: '3' }, 'bad-profiles-home', async (cli) => {
+    const r = await cli(['ask', 'bad profiles probe', '--json']);
+    const u = json(r.stdout)?.usage;
+    check(
+      'invalid profiles count -> posts only, xUsersFetched left out',
+      / · X Search 184 posts \(~\$0\.92\)$/.test(costLine(r.stderr)) && u?.xPostsFetched === 184 && !('xUsersFetched' in u) && u?.xSearchCostUsd === 0.92,
       `${JSON.stringify(u)} ${r.stderr}`,
     );
   });

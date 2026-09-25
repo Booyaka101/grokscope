@@ -157,12 +157,12 @@ const X_USER_USD = 0.01;
 
 /**
  * X Search's share of the bill at list price, from the fetch counts the API
- * reports. Undefined when the response carried neither count.
+ * reports. Undefined when the response carried no posts count.
  */
 export function xSearchCostUsd(usage: GrokResult['usage']): number | undefined {
-  const { xPostsFetched, xUsersFetched } = usage ?? {};
-  if (xPostsFetched === undefined && xUsersFetched === undefined) return undefined;
-  return (xPostsFetched ?? 0) * X_POST_USD + (xUsersFetched ?? 0) * X_USER_USD;
+  const { xPostsFetched, xUsersFetched = 0 } = usage ?? {};
+  if (xPostsFetched === undefined) return undefined;
+  return xPostsFetched * X_POST_USD + xUsersFetched * X_USER_USD;
 }
 
 /** Estimated USD cost, or undefined if we have no published rate for the model. */

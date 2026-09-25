@@ -10,31 +10,35 @@ profiles, on top of tokens
 ([docs.x.ai/developers/tools/x-search](https://docs.x.ai/developers/tools/x-search)).
 Every post a search or thread fetch returns counts, parent and quoted posts
 included, and the counts accumulate across all the searches in a request
-without de-duplication. So posts fetched, not tool calls, is now the number
-that decides what a query costs. The Responses API reports it as
+without de-duplication, so posts fetched now decide what a query costs. The
+Responses API reports them as
 `usage.server_side_tool_usage_details.x_posts_fetched` and `x_users_fetched`,
 and 1.4.0 ignored both.
 
-- **Cost line** (stderr) appends the counts and their list-price share of the
-  bill: `1,600 tokens · $1.1240 billed · X Search 184 posts, 3 profiles (~$0.95)`.
+- **Cost line** (stderr) appends the counts and their cost at list price:
+  `1,600 tokens · $1.1240 billed · X Search 184 posts, 3 profiles (~$0.95)`.
   The profile clause is left out when no profiles were fetched, and both counts
-  at zero print `X Search 0 posts (~$0.00)`. Without `cost_in_usd_ticks` the
-  total keeps its `~$… (estimated)` wording and the X Search segment still
-  prints, because the token estimate can't see that spend.
+  at zero print `X Search 0 posts (~$0.00)`. If the list-price figure comes out
+  above the exact bill (a discount or credit), the counts print without it.
+  Without `cost_in_usd_ticks` the total keeps its `~$… (estimated)` wording and
+  the X Search segment still prints, because the token estimate can't see that
+  spend.
 - **`--json`**: `usage` gains `xPostsFetched`, `xUsersFetched` and
   `xSearchCostUsd` (8 decimals). They're omitted when the response has no
   counts. Every existing field keeps its value.
 - **Parsing** (`GrokResult.usage.xPostsFetched` / `xUsersFetched`): only a
-  non-negative integer is accepted. Negative, fractional, string or null counts
-  are ignored rather than coerced.
+  non-negative safe integer is accepted. Negative, fractional, string or null
+  counts are ignored rather than coerced. A profile count without a valid posts
+  count is dropped too, so the line never claims `0 posts` it didn't get.
+- **`grokscope history`** lists each cached run's cost between the date and
+  the query: `$1.1240` when billed, `~$0.0049` when estimated.
 - **Unchanged when the counts are missing.** A proxy, or a result cached
-  before the repricing, prints byte-for-byte what 1.4.0 printed. This was
-  checked against the published 1.4.0 tarball over 20 command/format/cache
-  combinations, including a cache written by 1.4.0 and read by 1.5.0. Cache hits
-  and `grokscope history <n>` get the breakdown from the stored raw body with no
-  migration.
+  before the repricing, prints byte-for-byte what 1.4.0 printed, checked
+  against the published 1.4.0 package, including a cache 1.4.0 wrote. Cache
+  hits and `grokscope history <n>` get the breakdown from the stored raw body
+  with no migration.
 - **Docs**: the README and code comments no longer describe the per-call
-  model. The README's `~$0.15–$0.30 per query` budget is gone, since it was
+  model, and the README's `~$0.15–$0.30 per query` budget is gone, since it was
   measured under the old pricing.
 - **Mock**: `test/mock-server.mjs` returns `x_posts_fetched` (default 184) and
   `x_users_fetched` (default 3), overridable with `xPostsFetched` /
@@ -46,7 +50,7 @@ and 1.4.0 ignored both.
   mock.
 - **`npm test`** now exists (an alias for `test:e2e`). The release workflow
   already ran it, so a tag push would have failed before publishing.
-- e2e grew from 120 to 140 checks, including a `--version` check against
+- e2e grew from 120 to 148 checks, including a `--version` check against
   `package.json`.
 
 ## 1.4.0 — 2026-08-06

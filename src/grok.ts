@@ -305,9 +305,10 @@ async function safeErrorDetail(res: Response): Promise<string> {
   return msg ? `: ${msg}` : '';
 }
 
-/** A billed item count, or undefined unless it is a non-negative integer. */
+/** A billed item count, or undefined unless it is a non-negative safe integer. */
 function fetchCount(v: unknown): number | undefined {
-  return Number.isInteger(v) && (v as number) >= 0 ? (v as number) : undefined;
+  // + 0 turns a JSON -0 into 0, which would otherwise print as "-0 posts".
+  return Number.isSafeInteger(v) && (v as number) >= 0 ? (v as number) + 0 : undefined;
 }
 
 /** Walk the Responses API `output` array into {content, citations}. */
@@ -363,14 +364,16 @@ export function parseResponse(data: Record<string, unknown>): GrokResult {
       ? ticksRaw
       : undefined;
   const toolDetails = (usageRaw.server_side_tool_usage_details ?? {}) as Record<string, unknown>;
+  const xPostsFetched = fetchCount(toolDetails.x_posts_fetched);
   const usage = {
     inputTokens: typeof usageRaw.input_tokens === 'number' ? usageRaw.input_tokens : undefined,
     outputTokens: typeof usageRaw.output_tokens === 'number' ? usageRaw.output_tokens : undefined,
     totalTokens: typeof usageRaw.total_tokens === 'number' ? usageRaw.total_tokens : undefined,
     costUsdTicks,
     costUsd: costUsdTicks === undefined ? undefined : costUsdTicks / TICKS_PER_USD,
-    xPostsFetched: fetchCount(toolDetails.x_posts_fetched),
-    xUsersFetched: fetchCount(toolDetails.x_users_fetched),
+    xPostsFetched,
+    // Profiles alone would print a false "0 posts", so they need a valid posts count.
+    xUsersFetched: xPostsFetched === undefined ? undefined : fetchCount(toolDetails.x_users_fetched),
   };
 
   return {

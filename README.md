@@ -39,7 +39,7 @@ npx grokscope demo --all    # ask + compare + trending
 
 ## Setup (2 minutes)
 
-1. **Get an API key** at [console.x.ai](https://console.x.ai), then **add credits to your team** — a brand-new team starts with none, and every call returns `403` until you do. (Grok 4.5 is $2/M input, $6/M output tokens. Budget **~$0.15–$0.30 per query** — `x_search` pulls dozens of real posts into context, so a run measures 70k–140k tokens. GrokScope prints the **exact billed cost** after every run, straight from the API's own `cost_in_usd_ticks` field.) If anything is off, `grokscope doctor` tells you which of these it is, for free.
+1. **Get an API key** at [console.x.ai](https://console.x.ai), then **add credits to your team** — a brand-new team starts with none, and every call returns `403` until you do. (Grok 4.5 is $2/M input, $6/M output tokens, and since 2026-09-21 X Search adds $5 per 1,000 posts and $10 per 1,000 user profiles it fetches. GrokScope prints the **exact billed cost** after every run, straight from the API's own `cost_in_usd_ticks` field, and the same line shows how many posts X Search fetched, since that number is what drives spend.) If anything is off, `grokscope doctor` tells you which of these it is, for free.
 2. **Set the key** (GrokScope also accepts the standard `XAI_API_KEY`):
    ```powershell
    # PowerShell
@@ -77,7 +77,7 @@ npx grokscope demo --all    # ask + compare + trending
 - `--exclude someuser` — exclude handles (cannot be combined with `--handles`)
 - `--days 14` — override the search window (prompt and search filter stay in sync)
 - `--images` / `--videos` — let Grok analyze media inside posts
-- `--json` — stable machine-readable output: content, numbered citations with `postedAt`/`recency`, source URLs, and token usage with `costUsd` + `costExact` (`costExact: true` means `costUsd` is xAI's exact billed amount from `cost_in_usd_ticks` — tool calls and cache discounts included; `false` means it's the token-rate estimate). `estimatedCostUsd` keeps its pre-1.4.0 meaning for existing consumers. Built for CI jobs and dashboards.
+- `--json` — stable machine-readable output: content, numbered citations with `postedAt`/`recency`, source URLs, and token usage with `costUsd` + `costExact` (`costExact: true` means `costUsd` is xAI's exact billed amount from `cost_in_usd_ticks` — tool calls and cache discounts included; `false` means it's the token-rate estimate). `estimatedCostUsd` keeps its pre-1.4.0 meaning for existing consumers. When the API reports X Search fetch counts, `usage` also carries `xPostsFetched`, `xUsersFetched` and `xSearchCostUsd` (X Search's list-price share, which is inside `costUsd` when `costExact` is true and missing from the token estimate when it's false); the three keys are absent otherwise. Built for CI jobs and dashboards.
 - `--md` — clean markdown with an ISO-dated `## Sources` section. Built for pasting into newsletters and docs (`>> newsletter.md`).
 - `--fresh` — bypass the cache and fetch a fresh result (and overwrite the cached copy).
 - `--max-age <hours>` — ignore cached results older than this many hours (default `24`).
@@ -149,18 +149,33 @@ One POST to xAI's `/v1/responses` endpoint with the server-side `x_search` tool 
 ```bash
 npm install
 npm run build        # tsc -> dist/
-npm run test:e2e     # 120 checks against a doc-accurate local mock of /v1/responses
-npm run verify:live  # the 3 acceptance queries against the REAL API (needs GROK_API_KEY, ~$0.60)
+npm run test:e2e     # 140 checks against a doc-accurate local mock of /v1/responses
+npm run verify:live  # the 3 acceptance queries against the REAL API (needs GROK_API_KEY; ~$0.60 before the 2026-09-21 X Search repricing)
 npm pack             # build the distributable tarball
 ```
 
-After each query the CLI prints a dim cost line to stderr so BYOK users always know what they're spending. When the API returns `usage.cost_in_usd_ticks` (direct xAI calls do), the figure is **exact** — xAI's actual billed amount, inclusive of the server-side `x_search` calls ($5 per 1,000, billed separately from tokens) and prompt-caching discounts — and prints without a hedge: `70,821 tokens · $0.1975 billed`. If the field is missing (a proxy, an older recorded response, the offline mock), the line falls back to the published per-model token rates and says so: `70,821 tokens · ~$0.1529 (estimated)`; with a `GROK_MODEL` that has no published rate *and* no ticks, the token count still prints but the dollar figure is omitted rather than guessed. Cache hits and `grokscope history <n>` re-print the original run's figure. Shipping checklist lives in `SHIP.md`.
+After each query the CLI prints a dim cost line to stderr so BYOK users always know what they're spending. When the API returns `usage.cost_in_usd_ticks` (direct xAI calls do), the figure is **exact** — xAI's actual billed amount, inclusive of X Search and prompt-caching discounts — and prints without a hedge: `70,821 tokens · $0.1975 billed`. If the field is missing (a proxy, an older recorded response, the mock with `MOCK_OMIT_COST_TICKS=1`), the line falls back to the published per-model token rates and says so: `70,821 tokens · ~$0.1529 (estimated)`; with a `GROK_MODEL` that has no published rate *and* no ticks, the token count still prints but the dollar figure is omitted rather than guessed. Cache hits and `grokscope history <n>` re-print the original run's figure.
 
-`test/mock-server.mjs` mimics the xAI Responses API (including request-schema validation and realistic snowflake post IDs), so the full CLI pipeline is testable offline: `node test/mock-server.mjs` starts it standalone for manual demos.
+Since 2026-09-21 xAI bills X Search per item fetched, not per call: $5 per 1,000 posts and $10 per 1,000 user profiles, on top of tokens ([pricing](https://docs.x.ai/developers/tools/x-search)). Every post a search or thread fetch returns counts, parents and quoted posts included, and the counts add up across all the searches in one request without de-duplication. When the response reports them (`usage.server_side_tool_usage_details.x_posts_fetched` and `x_users_fetched`), the cost line adds X Search's share at list price. Against the offline mock:
+
+```
+1,600 tokens · $1.1240 billed · X Search 184 posts, 3 profiles (~$0.95)
+```
+
+The profile clause is dropped when no profiles were fetched. Responses without the counts (a proxy, results cached before the repricing) print exactly the 1.4.0 line. Shipping checklist lives in `SHIP.md`.
+
+`test/mock-server.mjs` mimics the xAI Responses API (including request-schema validation and realistic snowflake post IDs), so the full CLI pipeline is testable offline: `node test/mock-server.mjs` starts it standalone for manual demos and prints the line above.
+
+## Limitations
+
+- It needs a funded xAI key. There's no free tier: a new team gets `403` on every call until credits are added.
+- Answers are Grok's summary of what X Search returned. Every claim links to its post, so click through before you quote one.
+- The X Search figure is computed from the fetch counts at list price and rounded to the cent. It's a share of the billed total, not an extra charge, and xAI doesn't return it as a separate line item. Without `cost_in_usd_ticks` the total is a token-rate estimate that leaves X Search out, which is why the share still prints next to it.
+- `--days` tops out at 365.
 
 ## Contributing
 
-Issues and PRs welcome. The whole pipeline is testable offline (`npm run test:e2e` — 120 checks against a doc-accurate mock of xAI's `/v1/responses`), so you don't need an API key to hack on it. Good first contributions: new command modes (e.g. a `quotes` mode that surfaces the most-shared verbatim takes), output formats, shell completions, or a scheduled `watch run` recipe for GitHub Actions.
+Issues and PRs welcome. The whole pipeline is testable offline (`npm run test:e2e` — 140 checks against a doc-accurate mock of xAI's `/v1/responses`), so you don't need an API key to hack on it. Good first contributions: new command modes (e.g. a `quotes` mode that surfaces the most-shared verbatim takes), output formats, shell completions, or a scheduled `watch run` recipe for GitHub Actions.
 
 ## License
 

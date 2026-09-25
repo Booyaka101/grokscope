@@ -45,11 +45,16 @@ export interface GrokResult {
     /**
      * costUsdTicks / 10^10: the actual amount billed, after all discounts
      * (including prompt caching) and inclusive of all token costs AND
-     * server-side tool invocations (x_search at $5/1k calls), per
-     * https://docs.x.ai/developers/cost-tracking. Undefined when the API
-     * (or a proxy / an old cached response) did not return the field.
+     * server-side tool spend (X Search is billed per post and per user
+     * profile fetched), per https://docs.x.ai/developers/cost-tracking.
+     * Undefined when the API (or a proxy / an old cached response) did not
+     * return the field.
      */
     costUsd?: number;
+    /** X posts fetched across every X Search call in the request (not de-duplicated). */
+    xPostsFetched?: number;
+    /** X user profiles fetched across every X Search call in the request. */
+    xUsersFetched?: number;
   };
   /** The API set `status: incomplete` (e.g. token limit) — content may be partial. */
   incomplete: boolean;
@@ -300,6 +305,11 @@ async function safeErrorDetail(res: Response): Promise<string> {
   return msg ? `: ${msg}` : '';
 }
 
+/** A billed item count, or undefined unless it is a non-negative integer. */
+function fetchCount(v: unknown): number | undefined {
+  return Number.isInteger(v) && (v as number) >= 0 ? (v as number) : undefined;
+}
+
 /** Walk the Responses API `output` array into {content, citations}. */
 export function parseResponse(data: Record<string, unknown>): GrokResult {
   let content = '';
@@ -352,12 +362,15 @@ export function parseResponse(data: Record<string, unknown>): GrokResult {
     typeof ticksRaw === 'number' && Number.isFinite(ticksRaw) && ticksRaw >= 0
       ? ticksRaw
       : undefined;
+  const toolDetails = (usageRaw.server_side_tool_usage_details ?? {}) as Record<string, unknown>;
   const usage = {
     inputTokens: typeof usageRaw.input_tokens === 'number' ? usageRaw.input_tokens : undefined,
     outputTokens: typeof usageRaw.output_tokens === 'number' ? usageRaw.output_tokens : undefined,
     totalTokens: typeof usageRaw.total_tokens === 'number' ? usageRaw.total_tokens : undefined,
     costUsdTicks,
     costUsd: costUsdTicks === undefined ? undefined : costUsdTicks / TICKS_PER_USD,
+    xPostsFetched: fetchCount(toolDetails.x_posts_fetched),
+    xUsersFetched: fetchCount(toolDetails.x_users_fetched),
   };
 
   return {

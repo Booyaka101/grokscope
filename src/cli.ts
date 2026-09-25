@@ -29,12 +29,12 @@ import {
   daysAgoISO,
   WINDOW_DAYS,
 } from './prompts.js';
-import { renderResult, renderMarkdownDoc, renderJson, resolveCost } from './formatter.js';
+import { renderResult, renderMarkdownDoc, renderJson, resolveCost, xSearchCostUsd } from './formatter.js';
 import { runDemo, DEMO_NAMES, type DemoName } from './demo.js';
 import * as cache from './cache.js';
 import * as watch from './watch.js';
 
-const VERSION = '1.4.0';
+const VERSION = '1.5.0';
 // A new xAI team starts with zero credits and 403s on every call, so getting a
 // key is only half the setup — say so here rather than letting the first call fail.
 const GET_KEY_MSG =
@@ -183,19 +183,33 @@ function renderOutput(result: GrokResult, opts: SharedOpts, meta: RunMeta, model
  * calls and cache discounts included — and prints without a hedge
  * ("$0.1975 billed"). Otherwise it falls back to the per-model rate table
  * ("~$0.1529 (estimated)"); an unknown GROK_MODEL with no ticks omits the
- * dollar figure rather than misreporting it. */
+ * dollar figure rather than misreporting it. When the response reports X
+ * Search fetch counts, their list-price share follows, since posts fetched
+ * is what drives spend ("· X Search 184 posts, 3 profiles (~$0.95)"). */
 function printCostLine(model: string, result: GrokResult): void {
   const { inputTokens, outputTokens } = result.usage ?? {};
   if (inputTokens === undefined || outputTokens === undefined) return;
   const { usd, exact } = resolveCost(result.usage, model);
   const total = (inputTokens + outputTokens).toLocaleString();
-  const line =
+  let line =
     usd === undefined
       ? `${total} tokens`
       : exact
         ? `${total} tokens · $${usd.toFixed(4)} billed`
         : `${total} tokens · ~$${usd.toFixed(4)} (estimated)`;
+  const xUsd = xSearchCostUsd(result.usage);
+  if (xUsd !== undefined) {
+    const posts = result.usage?.xPostsFetched ?? 0;
+    const profiles = result.usage?.xUsersFetched ?? 0;
+    const counts = [plural(posts, 'post')];
+    if (profiles > 0) counts.push(plural(profiles, 'profile'));
+    line += ` · X Search ${counts.join(', ')} (~$${xUsd.toFixed(2)})`;
+  }
   process.stderr.write(`${stderrDim(line)}\n`);
+}
+
+function plural(n: number, noun: string): string {
+  return `${n.toLocaleString()} ${noun}${n === 1 ? '' : 's'}`;
 }
 
 async function run(system: string, user: string, opts: SharedOpts, meta: RunMeta): Promise<void> {

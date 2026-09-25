@@ -242,19 +242,32 @@ export function createMockServer(opts = {}) {
       // offline: opts.omitCostTicks (or MOCK_OMIT_COST_TICKS=1 standalone)
       // drops the field, like a proxy or a pre-ticks response would;
       // opts.costTicks overrides the value (0 and non-numeric are valid probes).
+      //
+      // x_posts_fetched / x_users_fetched are what X Search bills on since
+      // 2026-09-21 (https://docs.x.ai/developers/tools/x-search).
+      // opts.xPostsFetched / opts.xUsersFetched override them (any JSON value,
+      // so malformed counts can be probed); opts.omitFetchCounts (or
+      // MOCK_OMIT_FETCH_COUNTS=1) drops both, like a proxy or a pre-repricing
+      // body. x_search_calls stays for back-compat.
       const omitTicks = opts.omitCostTicks ?? process.env.MOCK_OMIT_COST_TICKS === '1';
+      const omitCounts = opts.omitFetchCounts ?? process.env.MOCK_OMIT_FETCH_COUNTS === '1';
       const usage = {
         input_tokens: 1180,
         output_tokens: 420,
         total_tokens: 1600,
         num_sources_used: urls.length,
-        ...(omitTicks
-          ? {}
-          : {
-              num_server_side_tools_used: urls.length,
-              server_side_tool_usage_details: { x_search_calls: urls.length, web_search_calls: 0 },
-              cost_in_usd_ticks: opts.costTicks ?? 61_200_000, // $0.00612
-            }),
+        num_server_side_tools_used: urls.length,
+        server_side_tool_usage_details: {
+          x_search_calls: urls.length,
+          web_search_calls: 0,
+          ...(omitCounts
+            ? {}
+            : {
+                x_posts_fetched: opts.xPostsFetched ?? 184,
+                x_users_fetched: opts.xUsersFetched ?? 3,
+              }),
+        },
+        ...(omitTicks ? {} : { cost_in_usd_ticks: opts.costTicks ?? 61_200_000 }), // $0.00612
       };
       const payload = {
         id: 'resp_mock_001',
@@ -289,7 +302,9 @@ export function createMockServer(opts = {}) {
 
 // Standalone: `node test/mock-server.mjs` for manual demos.
 if (import.meta.url === `file:///${process.argv[1]?.replace(/\\/g, '/')}`) {
-  const mock = createMockServer();
+  // A total that can contain the default fetch counts ($0.95 of X Search),
+  // unlike the tiny e2e default the 1.4.0 checks pin.
+  const mock = createMockServer({ costTicks: 11_240_000_000 });
   mock.listen().then((port) => {
     console.log(`Mock xAI API listening on http://127.0.0.1:${port}/v1`);
     console.log(`Try:  $env:GROK_API_KEY='test'; $env:GROK_BASE_URL='http://127.0.0.1:${port}/v1'; grokscope ask "bun vs node"`);

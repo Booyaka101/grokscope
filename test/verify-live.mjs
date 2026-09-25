@@ -4,7 +4,8 @@
  *
  *   npm run verify:live
  *
- * Expected total cost: ~$0.60 (3 queries; measured 2026-07-16 at $0.16-$0.29 each).
+ * Expected total cost: ~$0.60 (3 queries; measured 2026-07-16 at $0.16-$0.29 each),
+ * before X Search moved to per-item billing on 2026-09-21. Re-measure.
  */
 
 import { spawn } from 'node:child_process';
@@ -62,6 +63,9 @@ console.log('1/3  grokscope ask "bun vs node in 2026"  (30-day window, ~1-3 min)
   // The real API returns usage.cost_in_usd_ticks, so the cost line must be the
   // exact billed figure ("$0.1975 billed"), not the hedged estimate.
   check('ask -> exact billed cost line on stderr', /\$[\d.]+ billed/.test(r.stderr), r.stderr.slice(-200));
+  // Since 2026-09-21 the API should also report x_posts_fetched. The e2e suite
+  // only proves this against a mock built from the docs; this is the real wire.
+  check('ask -> X Search posts fetched on the cost line', / · X Search [\d,]+ posts?/.test(r.stderr), r.stderr.slice(-200));
   console.log(`      ${r.stderr.trim().split('\n').at(-1) ?? ''}`); // cost line
 }
 

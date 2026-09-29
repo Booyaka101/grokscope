@@ -45,6 +45,7 @@ porter 1
 readalign 0
 rim-loadorder-agent 0
 rimpatch 0
+roomtwin 0
 runner-drift 0
 rust-symbol-audit 1
 rust-symbol-audit-demo 0

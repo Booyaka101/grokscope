@@ -43,7 +43,7 @@ palschema-hub 4
 pmpt-eject 0
 pnpm11-ci-guard 0
 porter 1
-readalign 0
+readalign 1
 rim-loadorder-agent 0
 rimbisect 0
 rimpatch 0
@@ -61,4 +61,4 @@ uv-cache-warden 3
 vaseweld 5
 wow-secret-lint 1
 wp-schema-automator 0
-TOTALS 1 1
+TOTALS 2 1

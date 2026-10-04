@@ -12,10 +12,10 @@ breakdig 0
 caps-brief 0
 cargo-witness 0
 comfy-import-guard 1
-comfyui-node-safety-check 0
-comfyui-node-safety-test-fixtures 0
+comfyui-node-safety-check 1
+comfyui-node-safety-test-fixtures 1
 comfyui-vlm-gates 0
-comfyui-workflow-rescue 0
+comfyui-workflow-rescue 1
 cse-bridge 0
 diskstack 0
 dynamic-jobs-economy 0
@@ -62,4 +62,4 @@ uv-cache-warden 3
 vaseweld 5
 wow-secret-lint 1
 wp-schema-automator 0
-TOTALS 2 1
+TOTALS 1 1

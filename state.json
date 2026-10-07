@@ -18,7 +18,7 @@ comfyui-node-safety-test-fixtures 1
 comfyui-vlm-gates 0
 comfyui-workflow-rescue 1
 cse-bridge 0
-diskstack 0
+diskstack 1
 dynamic-jobs-economy 0
 earforge 0
 economy-guardian 0

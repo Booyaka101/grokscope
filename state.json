@@ -51,6 +51,7 @@ readalign 1
 rim-loadorder-agent 0
 rimbisect 0
 rimpatch 0
+rimsave-xray 0
 roomtwin 1
 runner-drift 0
 rust-symbol-audit 1

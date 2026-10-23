@@ -55,7 +55,7 @@ rimpatch 0
 rimsave-xray 0
 roomtwin 1
 runner-drift 0
-rust-symbol-audit 1
+rust-symbol-audit 2
 rust-symbol-audit-demo 0
 scanverdict 0
 shoebox 0

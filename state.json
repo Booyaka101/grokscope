@@ -12,11 +12,11 @@ breakdig 0
 caps-brief 0
 cargo-witness 0
 clearcombattext 0
-comfy-import-guard 1
-comfyui-node-safety-check 1
-comfyui-node-safety-test-fixtures 1
+comfy-import-guard 0
+comfyui-node-safety-check 0
+comfyui-node-safety-test-fixtures 0
 comfyui-vlm-gates 0
-comfyui-workflow-rescue 1
+comfyui-workflow-rescue 0
 cse-bridge 0
 diskstack 1
 doze 0
